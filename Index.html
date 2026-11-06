@@ -1,0 +1,2680 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Hub Academy</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  
+  <style>
+    :root {
+      --red:          #e11919;
+      --red-hover:    #b91c1c;
+      --red-glow:     rgba(225, 25, 25, 0.2);
+      --red-soft:     rgba(225, 25, 25, 0.1);
+
+      --bg-main:      #000000;
+      --bg-surface:   #0a0a0a;
+      --bg-card:      #141414;
+      --bg-input:     #1f1f1f;
+
+      --text-main:    #f5f5f5;
+      --text-sub:     #a3a3a3;
+      --border:       #262626;
+      --border-light: #333333;
+
+      --success:      #10b981;
+      --warning:      #f59e0b;
+      --danger:       #ef4444;
+
+      --font:         'Inter', system-ui, sans-serif;
+      --mono:         'Courier New', Courier, monospace;
+      --r-sm:         8px;
+      --r:            12px;
+      --r-lg:         16px;
+      
+      --shadow-sm:    0 4px 12px rgba(0, 0, 0, 0.5);
+      --shadow-md:    0 12px 32px rgba(0, 0, 0, 0.7);
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html, body {
+      height: 100vh; width: 100vw; overflow: hidden;
+      font-family: var(--font); font-size: 14px;
+      color: var(--text-main); background: var(--bg-main);
+      -webkit-font-smoothing: antialiased;
+    }
+
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: var(--border-light); border-radius: 10px; transition: 0.2s; }
+    ::-webkit-scrollbar-thumb:hover { background: var(--text-sub); }
+
+    /* ===== LOADER & TOASTS ===== */
+    .loader-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.9); backdrop-filter: blur(5px); z-index: 9999; display: flex; flex-direction: column; align-items: center; justify-content: center; transition: opacity 0.3s;}
+    .spinner { width: 45px; height: 45px; border: 3px solid var(--border); border-top-color: var(--red); border-radius: 50%; animation: spin 0.8s linear infinite; margin-bottom: 20px;}
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    #toast { position: fixed; bottom: 30px; right: 30px; background: var(--bg-surface); border: 1px solid var(--red); padding: 16px 24px; border-radius: var(--r); box-shadow: 0 10px 30px rgba(225,25,25,0.15); transform: translateX(150%); transition: transform 0.4s ease-out; z-index: 10000; font-weight: 600; display: flex; align-items: center; gap: 12px; color: var(--text-main);}
+    #toast.show { transform: translateX(0); }
+
+    /* ===== MODAIS ===== */
+    .modal-backdrop { position: fixed; inset: 0; background: rgba(0,0,0,0.85); backdrop-filter: blur(5px); z-index: 8000; display: none; justify-content: center; align-items: center; padding: 20px; opacity: 0; transition: opacity 0.3s;}
+    .modal-backdrop.show { display: flex; opacity: 1;}
+    .modal-box { background: var(--bg-surface); width: 100%; max-width: 600px; border-radius: var(--r-lg); border: 1px solid var(--border); box-shadow: var(--shadow-md); display: flex; flex-direction: column; max-height: 90vh; transform: scale(0.95); transition: 0.3s;}
+    .modal-backdrop.show .modal-box { transform: scale(1); }
+    
+    .modal-header { padding: 20px 25px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; background: var(--bg-card); border-radius: var(--r-lg) var(--r-lg) 0 0;}
+    .modal-title { font-size: 16px; font-weight: 800;}
+    .btn-close { background: transparent; border: none; color: var(--text-sub); font-size: 20px; cursor: pointer; transition: 0.2s;}
+    .btn-close:hover { color: var(--red); transform: scale(1.1);}
+    
+    .modal-body { padding: 25px; overflow-y: auto;}
+    .modal-footer { padding: 20px 25px; border-top: 1px solid var(--border); display: flex; justify-content: flex-end; gap: 12px; background: var(--bg-card); border-radius: 0 0 var(--r-lg) var(--r-lg);}
+
+    .alert-box { max-width: 400px !important; text-align: center; padding-top: 30px !important;}
+    .alert-icon { font-size: 42px; color: var(--red); margin-bottom: 15px;}
+    .alert-title { font-size: 20px; font-weight: 900; margin-bottom: 10px;}
+    .alert-text { font-size: 14px; color: var(--text-sub); margin-bottom: 25px; line-height: 1.5;}
+
+    /* ===== LOGIN SCREEN ===== */
+    #login-screen { position: fixed; inset: 0; background: var(--bg-main); z-index: 5000; display: flex; justify-content: center; align-items: center; }
+    .login-box { background: var(--bg-surface); padding: 45px 40px; border-radius: var(--r-lg); border: 1px solid var(--border); border-top: 4px solid var(--red); width: 90%; max-width: 380px; box-shadow: var(--shadow-md); text-align: center;}
+    .login-box h1 { font-size: 1.8rem; font-weight: 900; margin-bottom: 5px; color: var(--text-main);}
+    .login-box p { color: var(--text-sub); margin-bottom: 30px; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 1px;}
+    .input-auth { width: 100%; background: var(--bg-input); border: 1px solid var(--border); color: white; padding: 14px; border-radius: var(--r-sm); margin-bottom: 15px; text-align: center; outline: none; transition: 0.2s; font-size: 0.95rem;}
+    .input-auth:focus { border-color: var(--red); box-shadow: 0 0 0 2px var(--red-glow); }
+    .btn-auth { width: 100%; background: var(--red); color: white; border: none; padding: 14px; border-radius: var(--r-sm); font-weight: 800; font-size: 0.95rem; cursor: pointer; transition: 0.2s; text-transform: uppercase; letter-spacing: 1px;}
+    .btn-auth:hover { background: var(--red-hover); transform: translateY(-2px);}
+
+    /* ===== HEADER GERAL ===== */
+    header { 
+      background: var(--bg-surface); padding: 0 24px; height: 70px; display: flex; 
+      justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); 
+      z-index: 20;
+    }
+    .header-brand { font-size: 1.2rem; font-weight: 900; display: flex; align-items: center; gap: 10px; letter-spacing: 0.5px;}
+    .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--red); box-shadow: 0 0 0 2px var(--red-glow); animation: pulse 2s infinite; }
+    
+    .user-info { display: flex; align-items: center; gap: 12px; background: var(--bg-card); padding: 6px 16px 6px 6px; border-radius: 99px; border: 1px solid var(--border);}
+    .avatar { width: 32px; height: 32px; border-radius: 50%; background: var(--red-soft); display: flex; justify-content: center; align-items: center; font-weight: 900; color: var(--red); border: 1px solid var(--red-glow);}
+    .u-details { display: flex; flex-direction: column; }
+    .u-name { font-size: 0.85rem; font-weight: 700; }
+    .u-role { font-size: 0.7rem; color: var(--text-sub); text-transform: uppercase; letter-spacing: 0.5px;}
+
+    /* ===== ESTRUTURA PRINCIPAL ===== */
+    .main-container { display: flex; height: calc(100vh - 70px); overflow: hidden; }
+    
+    .sidebar { 
+      width: 260px; min-width: 260px; background: var(--bg-surface); border-right: 1px solid var(--border);
+      padding: 24px 12px; display: flex; flex-direction: column; gap: 4px; z-index: 5;
+    }
+    .s-label { font-size: 10px; font-weight: 800; letter-spacing: 1px; color: var(--text-sub); text-transform: uppercase; padding: 0 12px; margin: 16px 0 6px; }
+    
+    .nav-item { 
+      display: flex; align-items: center; gap: 12px; padding: 12px 14px; border-radius: var(--r-sm); 
+      cursor: pointer; color: var(--text-sub); font-size: 13px; font-weight: 600; 
+      transition: all 0.2s; user-select: none;
+    }
+    .nav-item:hover { background: var(--bg-card); color: var(--text-main); }
+    .nav-item.active { background: var(--red-soft); color: var(--text-main); border: 1px solid var(--red-glow); }
+    .nav-icon { font-size: 16px; width: 22px; text-align: center; transition: 0.2s; }
+    .nav-item.active .nav-icon { color: var(--red); }
+
+    main { flex: 1; display: flex; flex-direction: column; background: var(--bg-main); overflow: hidden;}
+    
+    .topbar { 
+      padding: 24px 35px; border-bottom: 1px solid var(--border); background: var(--bg-surface);
+      display: flex; justify-content: space-between; align-items: center; min-height: 85px; flex-shrink: 0;
+    }
+    .topbar-left { display: flex; flex-direction: column; gap: 4px;}
+    .page-title { font-size: 22px; font-weight: 900; color: var(--text-main); letter-spacing: -0.5px;}
+    .page-desc { font-size: 13px; color: var(--text-sub); font-weight: 500;}
+    .topbar-right { display: flex; align-items: center; gap: 16px; }
+
+    #treinamento-header-tools { display: none; align-items: center; gap: 15px; background: var(--bg-card); padding: 8px 16px; border-radius: var(--r); border: 1px solid var(--border);}
+    .prog-wrap { display: flex; flex-direction: column; gap: 4px; width: 150px;}
+    .prog-track { width: 100%; height: 6px; background: var(--bg-input); border-radius: 10px; overflow: hidden; border: 1px solid var(--border-light);}
+    .prog-fill { height: 100%; width: 0%; background: var(--red); transition: width 0.5s ease;}
+    .prog-text { font-size: 10px; color: var(--text-sub); text-align: right; font-weight: 700; text-transform: uppercase;}
+    .xp-badge { background: var(--red-soft); border: 1px solid var(--red-glow); color: var(--red); padding: 4px 10px; border-radius: var(--r-sm); font-weight: 800; font-size: 12px;}
+
+    /* ÁREA DE CONTEÚDO (ABAS) */
+    .page { flex: 1; overflow-y: auto; padding: 35px; display: none; animation: fadeUp 0.3s ease forwards;}
+    .page.active { display: block; }
+    @keyframes fadeUp { from { opacity: 0; transform: translateY(15px); } to { opacity: 1; transform: translateY(0); } }
+
+    /* ===== BOTÕES ===== */
+    .btn { 
+      display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 10px 18px; 
+      border-radius: var(--r-sm); font-family: var(--font); font-size: 13px; font-weight: 700; 
+      cursor: pointer; border: none; transition: 0.2s; white-space: nowrap;
+    }
+    .btn-primary { background: var(--red); color: white; }
+    .btn-primary:hover:not(:disabled) { background: var(--red-hover); transform: translateY(-1px); box-shadow: 0 4px 12px var(--red-glow); }
+    .btn-primary:disabled { opacity: 0.5; cursor: not-allowed;}
+    .btn-outline { background: var(--bg-card); color: var(--text-main); border: 1px solid var(--border-light); }
+    .btn-outline:hover { background: var(--bg-input); border-color: var(--text-sub); }
+
+    /* ===== FILTROS E BUSCA ===== */
+    .controls-row { display: flex; flex-wrap: wrap; gap: 15px; margin-bottom: 25px; align-items: center;}
+    .search-bar { flex: 1; min-width: 250px; max-width: 400px; background: var(--bg-input); border: 1px solid var(--border); padding: 12px 18px; border-radius: var(--r-sm); color: white; outline: none; transition: 0.2s; font-size: 13.5px;}
+    .search-bar:focus { border-color: var(--red); box-shadow: 0 0 0 2px var(--red-glow);}
+    
+    .filter-pills { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 5px; flex: 1;}
+    .pill { background: var(--bg-card); border: 1px solid var(--border); color: var(--text-sub); padding: 8px 16px; border-radius: 99px; font-size: 12px; font-weight: 700; cursor: pointer; transition: 0.2s; white-space: nowrap;}
+    .pill:hover { border-color: var(--border-light); color: var(--text-main);}
+    .pill.active { background: var(--red); border-color: var(--red); color: white;}
+
+/* ===== ABA 1: LINKS (VISUAL AGRUPADO PREMIUM) ===== */
+    .category-section {
+        background: var(--bg-surface);
+        border: 1px solid var(--border);
+        border-radius: var(--r-lg);
+        padding: 25px;
+        margin-bottom: 25px;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+    }
+    .category-header {
+        font-size: 13px;
+        font-weight: 800;
+        color: var(--text-sub);
+        margin-bottom: 20px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+    }
+    .link-grid { 
+        display: grid; 
+        grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); 
+        gap: 16px; 
+    }
+    .link-card { 
+      background: var(--bg-card); 
+      border: 1px solid var(--border); 
+      padding: 16px; 
+      border-radius: var(--r); 
+      text-decoration: none; 
+      color: var(--text-main); 
+      display: flex; 
+      align-items: center; 
+      gap: 15px; 
+      transition: 0.2s; 
+      position: relative; 
+      overflow: hidden; 
+      min-height: 75px;
+    }
+    .link-card::before { 
+      content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 3px; background: var(--red); transform: scaleY(0); transition: 0.2s; transform-origin: bottom; 
+    }
+    .link-card:hover { 
+      transform: translateY(-3px); border-color: var(--red); background: var(--bg-input); box-shadow: var(--shadow-sm);
+    }
+    .link-card:hover::before { transform: scaleY(1); }
+    
+    .link-icon { 
+      background: var(--bg-surface); min-width: 42px; height: 42px; display: flex; align-items: center; justify-content: center; border-radius: 10px; border: 1px solid var(--border); overflow: hidden;
+    }
+    .link-icon img { width: 24px; height: 24px; object-fit: contain; }
+    .link-icon-fallback { font-size: 18px; }
+    
+    .link-info { display: flex; flex-direction: column; gap: 4px; overflow: hidden; flex: 1;}
+    .link-title { font-weight: 800; font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: var(--text-main); }
+    .link-url { font-size: 11px; color: var(--text-sub); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+    /* ===== ABA 2: CRONOGRAMA & MAPA ===== */
+    .crono-layout { display: flex; gap: 24px; align-items: flex-start; }
+    .crono-sidebar { width: 280px; background: var(--bg-surface); border: 1px solid var(--border); border-radius: var(--r-lg); padding: 24px; flex-shrink: 0;}
+    .crono-sidebar h3 { font-size: 15px; font-weight: 800; color: var(--text-main); margin-bottom: 20px; padding-left: 10px; border-left: 3px solid var(--red);}
+    .crono-sidebar label { font-size: 11px; font-weight: 800; color: var(--text-sub); margin-bottom: 8px; display: block; letter-spacing: 0.5px;}
+    .crono-sidebar textarea { width: 100%; background: var(--bg-input); border: 1px solid var(--border); color: white; padding: 12px; border-radius: var(--r-sm); font-family: var(--font); font-size: 13px; line-height: 1.5; resize: vertical; outline: none; margin-bottom: 20px; min-height: 180px; transition: 0.2s;}
+    .crono-sidebar textarea:focus { border-color: var(--red); box-shadow: 0 0 0 2px var(--red-glow);}
+    
+    .crono-main { flex: 1; display: flex; flex-direction: column;}
+    .crono-header-btn { display: flex; justify-content: flex-end; margin-bottom: 20px;}
+    
+    .table-wrapper { background: var(--bg-surface); border: 1px solid var(--border); border-radius: var(--r); overflow-x: auto;}
+    .main-table { width: 100%; border-collapse: collapse; text-align: left; min-width: 700px;}
+    .main-table th { background: var(--bg-card); padding: 16px 20px; font-size: 11px; text-transform: uppercase; letter-spacing: 1px; color: var(--text-sub); border-bottom: 1px solid var(--border); font-weight: 800;}
+    .main-table td { padding: 16px 20px; border-bottom: 1px solid var(--border); font-size: 13.5px; font-weight: 500; color: var(--text-main); line-height: 1.6;}
+    .main-table tr:last-child td { border-bottom: none; }
+    .main-table tr:hover td { background: var(--bg-card); }
+    .slot-time { color: var(--red) !important; font-weight: 800 !important;}
+
+    /* ====== MAPA DE SALA OPERACIONAL ====== */
+    .mapa-sala-wrapper {
+        margin-top: 40px;
+        background: var(--bg-surface);
+        border: 1px solid var(--border);
+        border-radius: var(--r-lg);
+        padding: 30px;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+    }
+    .mapa-header {
+        display: flex; justify-content: space-between; align-items: center;
+        border-bottom: 1px solid var(--border); padding-bottom: 15px; margin-bottom: 30px;
+    }
+    .mapa-header h3 { font-size: 18px; font-weight: 900; display: flex; align-items: center; gap: 10px;}
+    .mapa-header h3::before { content: ''; width: 4px; height: 18px; background: var(--red); border-radius: 4px; }
+    
+    .room-layout {
+        display: flex; flex-direction: column; gap: 35px;
+        background-color: #0b0f19; 
+        background-image: linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+        background-size: 20px 20px;
+        border: 1px solid var(--border-light); border-radius: var(--r-lg);
+        padding: 40px 30px; position: relative; overflow-x: auto;
+    }
+    .room-door {
+        position: absolute; top: 30px; left: 0; width: 40px; height: 80px;
+        border: 4px solid var(--border-light); border-left: none; border-radius: 0 10px 10px 0;
+        display: flex; align-items: center; justify-content: center; background: var(--bg-card);
+    }
+    .room-door::after { content: '🚪'; font-size: 20px; }
+
+    .room-row { display: flex; gap: 30px; flex-wrap: nowrap; min-width: max-content; }
+    
+    .cluster {
+        background: rgba(255,255,255,0.02); border: 1px solid var(--border);
+        border-radius: var(--r); padding: 20px; position: relative;
+    }
+    .cluster-title {
+        position: absolute; top: -12px; left: 20px; background: #0b0f19; padding: 0 10px;
+        font-size: 11px; font-weight: 900; color: var(--text-sub); text-transform: uppercase; letter-spacing: 1px;
+    }
+    
+    .desks-flex { display: flex; gap: 12px; }
+    
+    /* ILHA CENTRAL NIVELADA (8 CIMA / 8 BAIXO) */
+    .ilha-central {
+        background: rgba(255,255,255,0.02);
+        border: 1px solid var(--border);
+        border-radius: var(--r-lg);
+        padding: 25px;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        position: relative;
+    }
+    .ilha-desks {
+        display: grid;
+        grid-template-columns: repeat(8, 75px);
+        gap: 12px;
+        justify-content: center;
+    }
+    .sub-cluster-title { font-size: 10px; font-weight: 800; color: var(--text-sub); text-transform: uppercase; letter-spacing: 1px; text-align: center;}
+    
+    .ilha-table-center {
+        height: 30px; background: #1e293b; border-radius: 8px; width: 100%;
+        margin: 5px 0; box-shadow: inset 0 4px 6px rgba(0,0,0,0.3); border: 1px solid #334155;
+    }
+    
+    .desk-unit {
+        width: 75px; height: 65px; background: #1e293b; border-top: 4px solid #334155;
+        border-radius: 6px; display: flex; flex-direction: column; align-items: center; justify-content: center;
+        transition: 0.2s; position: relative; user-select: none; box-shadow: 0 4px 6px rgba(0,0,0,0.2);
+    }
+    .desk-avatar { font-size: 22px; margin-bottom: 2px; color: var(--text-sub); }
+    .desk-name { font-size: 10px; font-weight: 700; color: var(--text-main); text-align: center; width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; padding: 0 4px;}
+    
+
+    .desk-unit.empty { opacity: 0.5; border-top-style: dashed; background: transparent; border: 1px dashed var(--border-light);}
+    .desk-unit.empty .desk-name { color: var(--text-sub); font-style: italic; }
+
+    .leader-desk {
+        background: #111; border: 1px solid #fbbf24; border-top: 4px solid #f59e0b;
+        box-shadow: 0 0 15px rgba(245, 158, 11, 0.15);
+    }
+    .leader-desk .desk-avatar { color: #fbbf24; }
+    .leader-desk .desk-name { color: #fde68a; font-weight: 800; }
+
+    .admin-mode .desk-unit { cursor: pointer; }
+    .admin-mode .desk-unit:hover {
+        border-color: var(--red); transform: translateY(-4px); box-shadow: 0 8px 20px rgba(225,25,25,0.2);
+    }
+    .admin-mode .desk-unit::after {
+        content: '✏️'; position: absolute; top: -8px; right: -8px; background: var(--bg-card);
+        border: 1px solid var(--red); border-radius: 50%; width: 22px; height: 22px;
+        display: flex; align-items: center; justify-content: center; font-size: 10px;
+        opacity: 0; transition: 0.2s; box-shadow: 0 2px 5px rgba(0,0,0,0.5);
+    }
+    .admin-mode .desk-unit:hover::after { opacity: 1; }
+
+    .cluster-lideranca { display: flex; align-items: center; padding-left: 40px; }
+    .cluster-lideranca .cluster-title { transform: rotate(-90deg); left: -25px; top: 40px; background: #0b0f19;}
+
+    .modal-print-overlay { position: fixed; inset:0; background: rgba(0,0,0,0.9); z-index:9999; display:none; justify-content:center; align-items:center; padding: 20px; opacity: 0; transition: 0.3s;}
+    .modal-print-overlay.show { display:flex; opacity: 1;}
+    .modal-print-box { background: #ffffff; color: #000000; padding: 40px; border-radius: var(--r-lg); width: 100%; max-width: 900px; max-height: 90vh; overflow-y: auto; transform: scale(0.95); transition: 0.3s;}
+    .modal-print-overlay.show .modal-print-box { transform: scale(1); }
+    .print-header { text-align: center; margin-bottom: 25px; border-bottom: 2px solid #e2e8f0; padding-bottom: 15px;}
+    .print-header h1 { color: #dc2626; font-size: 24px; font-weight: 900; margin-bottom: 5px;}
+    .print-header p { color: #64748b; font-weight: 700; text-transform: uppercase; font-size: 12px;}
+    .print-table { width: 100%; border-collapse: collapse; font-family: Arial, sans-serif;}
+    .print-table th, .print-table td { border: 1px solid #cbd5e1; padding: 12px; text-align: center; font-size: 13px;}
+    .print-table th { background: #f1f5f9; font-weight: 800; color: #0f172a; text-transform: uppercase;}
+    .print-table td.print-dia { font-weight: 800; color: #dc2626; background: #f8fafc; text-align: left;}
+    
+    @media print {
+        @page { size: landscape; margin: 10mm; }
+        body * { visibility: hidden; }
+        
+        #modal-impressao-cronograma, #modal-impressao-cronograma * { visibility: visible; }
+        #modal-impressao-cronograma { position: absolute; left: 0; top: 0; background: white; padding:0; align-items: flex-start;}
+        .modal-print-box { box-shadow: none; border-radius: 0; max-width: 100%; transform: scale(1) !important; padding: 0 !important;}
+        
+        .print-map-mode #room-canvas, .print-map-mode #room-canvas * { visibility: visible !important; }
+        .print-map-mode #room-canvas {
+            position: absolute; left: 0; top: 0; width: 100%; height: auto;
+            background: white !important; border: none !important;
+            -webkit-print-color-adjust: exact;
+            transform: scale(0.85); /* Ajuste automático para A4 */
+            transform-origin: top left;
+        }
+        .print-map-mode .desk-unit { background: #f1f5f9 !important; border: 1px solid #cbd5e1 !important; border-top: 4px solid #94a3b8 !important; box-shadow: none !important;}
+        .print-map-mode .desk-name { color: #0f172a !important; font-weight: 800 !important; }
+        .print-map-mode .desk-avatar { color: #475569 !important; }
+        .print-map-mode .cluster { border-color: #cbd5e1 !important; background: transparent !important;}
+        .print-map-mode .cluster-title, .print-map-mode .sub-cluster-title { background: white !important; color: #0f172a !important; font-weight: 900 !important; }
+        .print-map-mode .ilha-table-center { background: #e2e8f0 !important; border-color: #cbd5e1 !important; box-shadow: none !important;}
+        .print-map-mode .room-door { background: white !important; border-color: #cbd5e1 !important; }
+        .print-map-mode .leader-desk { border-top-color: #f59e0b !important; }
+        .print-map-mode .leader-desk .desk-name { color: #b45309 !important; }
+        
+        .no-print { display: none !important; }
+    }
+
+    .notes-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 20px; align-items: start;}
+    .note-add-btn { border: 2px dashed var(--border-light); border-radius: var(--r); min-height: 220px; display: flex; flex-direction: column; align-items: center; justify-content: center; color: var(--text-sub); cursor: pointer; transition: 0.2s; background: var(--bg-card);}
+    .note-add-btn:hover { border-color: var(--red); color: var(--red); background: var(--red-soft);}
+    .note-add-btn i { font-size: 32px; margin-bottom: 8px;}
+
+    .note-card { border-radius: var(--r); padding: 20px; position: relative; transition: 0.2s; display: flex; flex-direction: column; min-height: 220px; color: #0f172a; border: 1px solid rgba(0,0,0,0.1); box-shadow: var(--shadow-sm);}
+    .note-card:hover { transform: translateY(-2px); box-shadow: var(--shadow-md);}
+    .note-topbar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;}
+    .note-colors { display: flex; gap: 4px; opacity: 0; transition: 0.2s;}
+    .note-card:hover .note-colors { opacity: 1; }
+    .color-dot { width: 12px; height: 12px; border-radius: 50%; cursor: pointer; border: 2px solid rgba(0,0,0,0.1); transition: 0.2s;}
+    .color-dot:hover { transform: scale(1.2); }
+    .btn-del-note { background: rgba(0,0,0,0.1); border: none; border-radius: 6px; width: 24px; height: 24px; display: flex; justify-content: center; align-items: center; cursor: pointer; color: #0f172a; opacity: 0; transition: 0.2s;}
+    .note-card:hover .btn-del-note { opacity: 1; }
+    .btn-del-note:hover { background: #ef4444; color: white;}
+
+    .note-title { font-weight: 900; font-size: 16px; line-height: 1.3; border: 1px solid transparent; border-radius: 6px; padding: 4px; outline: none; transition: 0.2s; margin-bottom: 4px;}
+    .note-title:focus { border-color: rgba(0,0,0,0.2); background: rgba(255,255,255,0.4); }
+    .note-title[contenteditable]:empty::before { content: "Título..."; color: rgba(0,0,0,0.4); }
+
+    .note-body { flex: 1; font-size: 13.5px; line-height: 1.5; border: 1px solid transparent; border-radius: 6px; padding: 4px; outline: none; transition: 0.2s; margin-bottom: 10px; white-space: pre-wrap; word-wrap: break-word;}
+    .note-body:focus { border-color: rgba(0,0,0,0.2); background: rgba(255,255,255,0.4); }
+    .note-body[contenteditable]:empty::before { content: "Escreva sua anotação..."; color: rgba(0,0,0,0.4); }
+    .note-date { font-size: 10.5px; color: rgba(0,0,0,0.5); font-weight: 700; text-align: right;}
+
+    .bg-yellow { background: #fef08a; } .bg-blue { background: #bfdbfe; } .bg-green { background: #bbf7d0; } .bg-pink { background: #fbcfe8; } .bg-purple { background: #e9d5ff; } .bg-gray { background: #e2e8f0; }
+
+    .resp-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 20px; }
+    .resp-card { background: var(--bg-surface); border: 1px solid var(--border); border-radius: var(--r); padding: 20px; cursor: pointer; transition: 0.2s; position: relative; overflow: hidden; display: flex; flex-direction: column;}
+    .resp-card::before { content: 'COPIAR TEXTO'; position: absolute; inset: 0; background: rgba(16, 185, 129, 0.95); color: white; font-weight: 900; font-size: 18px; letter-spacing: 1px; display: flex; justify-content: center; align-items: center; opacity: 0; transition: 0.2s; z-index: 2;}
+    .resp-card:hover { border-color: var(--success); transform: translateY(-2px);}
+    .resp-card:active::before { opacity: 1; }
+    
+    .resp-cat { font-size: 10px; font-weight: 800; color: var(--red); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 10px; display: inline-block; background: var(--red-soft); padding: 4px 8px; border-radius: 6px;}
+    .resp-title { font-size: 15px; font-weight: 800; margin-bottom: 8px; color: var(--text-main);}
+    .resp-content { font-size: 13px; color: var(--text-sub); line-height: 1.5; white-space: pre-wrap; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; flex: 1;}
+    .admin-actions { position: absolute; top: 15px; right: 15px; display: flex; gap: 6px; z-index: 5;}
+    .btn-icon-admin { background: var(--bg-card); border: 1px solid var(--border); color: var(--text-main); border-radius: 6px; width: 28px; height: 28px; display: flex; justify-content: center; align-items: center; cursor: pointer; transition: 0.2s;}
+    .btn-icon-admin:hover { background: var(--red); border-color: var(--red);}
+    
+    .inst-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 20px; }
+    .inst-card { background: var(--bg-surface); border: 1px solid var(--border); border-radius: var(--r); overflow: hidden; cursor: pointer; transition: 0.2s; display: flex; flex-direction: column;}
+    .inst-card:hover { border-color: var(--border-light); transform: translateY(-3px);}
+    .inst-img-wrapper { height: 140px; background: var(--bg-card); display: flex; justify-content: center; align-items: center; border-bottom: 1px solid var(--border); position: relative; overflow: hidden;}
+    .inst-img-wrapper img { width: 100%; height: 100%; object-fit: cover; opacity: 0.6; transition: 0.3s;}
+    .inst-card:hover .inst-img-wrapper img { opacity: 1; transform: scale(1.05);}
+    .inst-icon-fallback { font-size: 36px; opacity: 0.5;}
+    .inst-body { padding: 20px; flex: 1; display: flex; flex-direction: column;}
+    .inst-cat { font-size: 10px; font-weight: 800; color: #a855f7; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px;}
+    .inst-title { font-size: 16px; font-weight: 800; margin-bottom: 8px;}
+    .inst-desc { font-size: 13px; color: var(--text-sub); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; line-height: 1.5;}
+
+    .rma-badge { padding: 4px 10px; border-radius: 6px; font-size: 11px; font-weight: 800; display: inline-block; letter-spacing: 0.5px; text-transform: uppercase;}
+    .rma-fornecedor { background: rgba(59, 130, 246, 0.15); color: #93c5fd; border: 1px solid rgba(59, 130, 246, 0.3); }
+    .rma { background: var(--red-soft); color: var(--red); border: 1px solid var(--red-glow); }
+
+    .form-group { margin-bottom: 20px; }
+    .form-label { display: block; font-size: 11px; font-weight: 800; color: var(--text-sub); margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.5px;}
+    .form-input, .form-select, .form-textarea { width: 100%; background: var(--bg-input); border: 1px solid var(--border); color: white; padding: 12px 14px; border-radius: var(--r-sm); font-size: 14px; outline: none; transition: 0.2s; font-family: var(--font);}
+    .form-input:focus, .form-textarea:focus { border-color: var(--red); box-shadow: 0 0 0 2px var(--red-glow);}
+    .form-textarea { resize: vertical; min-height: 120px; line-height: 1.5;}
+
+    .read-inst-img { width: 100%; max-height: 350px; object-fit: contain; border-radius: var(--r-sm); margin-bottom: 20px; border: 1px solid var(--border); background: #000;}
+    .read-inst-text { font-size: 14.5px; color: var(--text-main); line-height: 1.7; white-space: pre-wrap;}
+
+    /* ============================================================
+       ABA 7: TREINAMENTO (ACADEMY)
+       ============================================================ */
+    .app-card { background: var(--bg-surface); border: 1px solid var(--border); border-radius: var(--r-lg); display: flex; flex-direction: column; overflow: hidden; animation: slideUpFade 0.4s ease forwards; min-height: 50vh; max-width: 900px; margin: 0 auto; box-shadow: var(--shadow-sm);}
+    .card-body-train { padding: 40px; flex: 1; overflow-y: auto; }
+    .card-footer-train { padding: 20px 40px; background: var(--bg-card); border-top: 1px solid var(--border); display: flex; justify-content: flex-end; align-items: center; gap: 20px;}
+    
+    .title-main { font-size: 24px; font-weight: 900; margin-bottom: 16px; color: var(--text-main); text-transform: uppercase; letter-spacing: -0.5px;}
+    .title-main span { color: var(--red); }
+    .text-content { font-size: 14.5px; color: var(--text-sub); line-height: 1.6; margin-bottom: 20px; white-space: pre-wrap;}
+    
+    .tag-train { display: inline-block; padding: 4px 12px; font-size: 10px; font-weight: 800; border-radius: 99px; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 12px; }
+    .tag-teoria { background: var(--bg-input); color: var(--text-main); border: 1px solid var(--border); }
+    .tag-pratica { background: var(--red-soft); color: var(--red); border: 1px solid var(--red-glow); }
+    .tag-auditoria { background: rgba(245, 158, 11, 0.1); color: var(--warning); border: 1px solid rgba(245, 158, 11, 0.3); }
+    .tag-hardcore { background: rgba(168, 85, 247, 0.1); color: #c084fc; border: 1px solid rgba(168, 85, 247, 0.3); }
+    
+    .options-list { display: flex; flex-direction: column; gap: 12px; }
+    .btn-option { background: var(--bg-card); border: 1px solid var(--border); padding: 16px; border-radius: 12px; color: var(--text-main); font-size: 14px; font-weight: 500; text-align: left; cursor: pointer; transition: 0.2s; display: flex; align-items: center; gap: 15px; line-height: 1.5; font-family: var(--font);}
+    .btn-option:hover { border-color: var(--red); background: var(--bg-input);}
+    .btn-option.correct { background: rgba(16, 185, 129, 0.1); border-color: var(--success); color: var(--success); font-weight: 700;}
+    .btn-option.wrong { background: rgba(239, 68, 68, 0.1); border-color: var(--red); color: var(--red); }
+    .letra { background: var(--bg-input); min-width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; border-radius: 8px; font-weight: 800; color: var(--text-sub); font-size: 13px; border: 1px solid var(--border);}
+    .btn-option:hover .letra { background: var(--red); color: white; border-color: var(--red);}
+    .btn-option.correct .letra { background: var(--success); color: white; border-color: var(--success);}
+    .btn-option.wrong .letra { background: var(--red); color: white; border-color: var(--red);}
+    
+    .hardcore-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 24px; }
+    .mockup-panel { background: #0b1120; border: 1px solid var(--border); border-radius: 10px; overflow: hidden; display: flex; flex-direction: column;}
+    .mockup-header { background: var(--bg-input); padding: 10px 14px; font-size: 10.5px; font-weight: 800; color: var(--text-sub); text-transform: uppercase; border-bottom: 1px solid var(--border); letter-spacing: 0.5px;}
+    .mockup-body { padding: 16px; font-size: 13px; color: #e2e8f0; line-height: 1.5; font-family: var(--mono); }
+    .mockup-panel.erp { background: #1e1b4b; border-color: #4c1d95; }
+    .mockup-panel.erp .mockup-header { background: #2e1065; color: #ddd6fe; border-color: #4c1d95; }
+    .mockup-highlight { color: var(--warning); font-weight: bold; }
+    .scenario-box { background: var(--bg-input); padding: 20px; border-radius: 10px; border-left: 3px solid var(--red); font-size: 14px; font-weight: 500; margin-bottom: 20px; color: var(--text-main); line-height: 1.6; }
+    
+    .text-highlight { background: var(--red-soft); border-left: 3px solid var(--red); padding: 16px 20px; border-radius: 0 8px 8px 0; margin-bottom: 20px; font-size: 14px; line-height: 1.5; color: var(--text-main); font-weight: 500;}
+    .img-container { margin: 20px 0; border: 1px solid var(--border); border-radius: 10px; background: #000; overflow: hidden;}
+    .slide-image { width: 100%; display: block; object-fit: contain; min-height: 200px; max-height: 400px; transition: transform 0.4s ease; }
+    .slide-image:hover { transform: scale(1.02); }
+    
+    .info-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 15px; margin-top: 20px; }
+    .info-box-train { background: var(--bg-input); padding: 20px; border-radius: 10px; border: 1px solid var(--border); }
+    .info-box-train h4 { color: var(--red); font-size: 13px; margin-bottom: 8px; text-transform: uppercase; font-weight: 800;}
+    .info-box-train p { font-size: 13px; color: var(--text-sub); line-height: 1.5; }
+    
+    .email-mockup { background: #ffffff; color: #000; border-radius: 10px; overflow: hidden; margin-top: 20px; border: 1px solid var(--border); }
+    .email-header { background: #f1f5f9; padding: 14px 20px; border-bottom: 1px solid #cbd5e1; font-size: 12px; color: #475569; font-weight: 600;}
+    .email-body { padding: 25px; font-size: 14px; line-height: 1.6; white-space: pre-wrap; font-family: Arial, sans-serif;}
+    .audit-err { cursor: pointer; border-bottom: 2px dashed var(--warning); padding-bottom: 2px; transition: 0.2s; font-weight: 600;}
+    .audit-err:hover { background: rgba(245, 158, 11, 0.2); }
+    .audit-err.found { background: rgba(239, 68, 68, 0.15); border-bottom: 2px solid var(--red); color: var(--red); text-decoration: line-through; pointer-events: none; }
+    .audit-score { display: flex; justify-content: space-between; background: var(--bg-input); color: var(--text-main); padding: 14px 20px; font-weight: 800; text-transform: uppercase; font-size: 11px; border-top: 1px solid var(--border);}
+
+    .certificate { border: 6px solid var(--bg-input); padding: 40px; background: #ffffff; color: #000; border-radius: 12px; text-align: center; position: relative; overflow: hidden; margin-bottom: 20px;}
+    .certificate::before { content: ''; position: absolute; inset: 6px; border: 2px solid var(--red); pointer-events: none; }
+    .cert-title { font-size: 30px; font-weight: 900; color: var(--red); text-transform: uppercase; margin-bottom: 6px; letter-spacing: 1px; }
+    .cert-sub { font-size: 12px; color: #475569; font-weight: 700; text-transform: uppercase; letter-spacing: 2px; margin-bottom: 30px; }
+    .cert-name { font-size: 36px; font-weight: 800; margin-bottom: 15px; border-bottom: 2px solid #e2e8f0; display: inline-block; padding: 0 40px; }
+    .app-card.shake { animation: shake 0.5s cubic-bezier(.36,.07,.19,.97) both; border-color: var(--danger); box-shadow: 0 0 20px rgba(239, 68, 68, 0.3); }
+
+    @keyframes slideUpFade { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+    @keyframes shake { 10%, 90% { transform: translate3d(-1px, 0, 0); } 20%, 80% { transform: translate3d(2px, 0, 0); } 30%, 50%, 70% { transform: translate3d(-4px, 0, 0); } 40%, 60% { transform: translate3d(4px, 0, 0); } }
+
+    @media (max-width: 768px) {
+      .main-container { flex-direction: column; }
+      header { padding: 15px 20px; height: 65px;}
+      .sidebar { display: none; } 
+      .topbar { flex-direction: column; align-items: flex-start; gap: 15px; padding: 20px; }
+      .view-container { padding: 20px; }
+      .link-grid, .notes-grid, .resp-grid, .inst-grid { grid-template-columns: 1fr; }
+      .crono-layout { flex-direction: column; }
+      .crono-sidebar { width: 100%; }
+      .hardcore-grid { grid-template-columns: 1fr; }
+      .room-layout { overflow-x: auto; padding: 20px; }
+    }
+  </style>
+</head>
+<body>
+
+  <div id="loader" class="loader-overlay" style="display: none;">
+    <div class="spinner"></div>
+    <div style="font-weight: 900; letter-spacing: 3px; color: var(--text-sub);">CARREGANDO</div>
+  </div>
+
+  <div id="toast">✅ <span id="toast-msg">Sucesso!</span></div>
+
+  <div class="modal-backdrop" id="modal-confirm">
+    <div class="modal-box alert-box">
+      <div class="alert-icon" id="confirm-icon">⚠️</div>
+      <div class="alert-title" id="confirm-title">Tem certeza?</div>
+      <div class="alert-text" id="confirm-text">Esta ação não pode ser desfeita.</div>
+      <div style="display: flex; gap: 15px; justify-content: center; padding-bottom: 20px;">
+        <button class="btn btn-outline" onclick="fecharConfirm()">Cancelar</button>
+        <button class="btn btn-primary" id="btn-confirm-yes">Sim, Continuar</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-backdrop" id="modal-edit-mesa">
+    <div class="modal-box" style="max-width: 400px; margin-top: 10vh;">
+      <div class="modal-header">
+        <div class="modal-title">⚙️ Configurar Mesa</div>
+        <button class="btn-close" onclick="$('modal-edit-mesa').classList.remove('show')">✖</button>
+      </div>
+      <div class="modal-body">
+        <input type="hidden" id="edit-mesa-id">
+        <div class="form-group">
+          <label class="form-label">Setor da Mesa</label>
+          <input type="text" class="form-input" id="edit-mesa-setor" placeholder="Ex: Devolução">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Nome do Analista</label>
+          <input type="text" class="form-input" id="edit-mesa-analista" placeholder="Nome (Ex: Lucas S.)">
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-outline" onclick="$('modal-edit-mesa').classList.remove('show')">Cancelar</button>
+        <button class="btn btn-primary" onclick="salvarMesaUI()">Salvar Posição</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-backdrop" id="modal-form-link">
+    <div class="modal-box" style="max-width: 400px;">
+      <div class="modal-header">
+        <div class="modal-title" id="ml-title">Novo Link</div>
+        <button class="btn-close" onclick="fecharModal('modal-form-link')">✖</button>
+      </div>
+      <div class="modal-body">
+        <input type="hidden" id="ml-id">
+        <div class="form-group">
+          <label class="form-label">Categoria</label>
+          <input type="text" class="form-input" id="ml-cat" placeholder="Ex: Sistemas">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Nome do Link</label>
+          <input type="text" class="form-input" id="ml-nome" placeholder="Ex: Magento">
+        </div>
+        <div class="form-group">
+          <label class="form-label">URL de Acesso</label>
+          <input type="text" class="form-input" id="ml-url" placeholder="https://...">
+        </div>
+        <div style="display: flex; gap: 15px;">
+           <div class="form-group" style="flex:1;">
+             <label class="form-label">Status</label>
+             <select class="form-select" id="ml-status">
+               <option value="Ativo">Ativo</option>
+               <option value="Inativo">Inativo</option>
+             </select>
+           </div>
+           <div class="form-group" style="flex:1;">
+             <label class="form-label">Ordem (Ex: 1, 2...)</label>
+             <input type="number" class="form-input" id="ml-ordem" value="1">
+           </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-outline" onclick="fecharModal('modal-form-link')">Cancelar</button>
+        <button class="btn btn-primary" onclick="salvarLinkDB()">Salvar Link</button>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- MODAL DOCX
+ -->
+
+<div class="modal-backdrop" id="modal-certificados">
+    <div class="modal-box" style="max-width: 700px;">
+      <div class="modal-header">
+        <div class="modal-title">📜 Monitoramento de Certificados</div>
+        <button class="btn-close" onclick="fecharModal('modal-certificados')">✖</button>
+      </div>
+      <div class="modal-body" style="padding: 0; max-height: 60vh; overflow-y: auto;">
+        <table class="main-table" style="width: 100%;">
+          <thead>
+            <tr>
+              <th>Analista</th>
+              <th>Data de Conclusão</th>
+              <th style="text-align:right;">Ação</th>
+            </tr>
+          </thead>
+          <tbody id="certificados-body"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- MODAL MARCAS -->
+  <div class="modal-backdrop" id="modal-form-marca">
+    <div class="modal-box" style="max-width: 500px;">
+      <div class="modal-header">
+        <div class="modal-title" id="mm-title">Nova Marca de RMA</div>
+        <button class="btn-close" onclick="fecharModal('modal-form-marca')">✖</button>
+      </div>
+      <div class="modal-body">
+        <input type="hidden" id="mm-id">
+        <div class="form-group">
+          <label class="form-label">Marca / Fabricante</label>
+          <input type="text" class="form-input" id="mm-marca" placeholder="Ex: Corsair">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Regra de Tratativa</label>
+          <input type="text" class="form-input" id="mm-regra" placeholder="Ex: Direto com Fornecedor">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Classificação (Badge)</label>
+          <select class="form-select" id="mm-tipo">
+            <option value="FORNECEDOR">RMA Fornecedor</option>
+            <option value="RMA">RMA</option>
+            <option value="MISTO">Regra Mista</option>
+          </select>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-outline" onclick="fecharModal('modal-form-marca')">Cancelar</button>
+        <button class="btn btn-primary" onclick="salvarMarcaDB()">Salvar Marca</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="login-screen">
+    <div class="login-box">
+      <div style="width: 70px; height: 70px; background: var(--red); border-radius: 18px; display: inline-flex; justify-content: center; align-items: center; font-size: 2.2rem; margin-bottom: 20px; box-shadow: 0 10px 30px var(--red-glow);">🚀</div>
+      <h1>HUB</h1>
+      <p>Workspace Operacional</p>
+      <input type="text" id="inp-login" class="input-auth" placeholder="Seu Usuário" autocomplete="off">
+      <input type="password" id="inp-pass" class="input-auth" placeholder="Sua Senha" autocomplete="off" onkeyup="if(event.key==='Enter') fazerLogin()">
+      <button class="btn btn-primary" style="width: 100%; justify-content: center; padding: 16px; font-size: 1.05rem;" onclick="fazerLogin()">Acessar</button>
+    </div>
+  </div>
+
+  <header style="display:none;" id="main-header">
+    <div class="header-brand">
+      <div class="dot"></div>
+      ATENDIMENTO
+    </div>
+<div class="user-info">
+      <div class="avatar" id="ui-avatar">A</div>
+      <div class="u-details">
+        <div class="u-name" id="ui-name">Carregando...</div>
+        <div class="u-role" id="ui-role">...</div>
+      </div>
+      <button id="btn-criar-usuario" class="btn-primary" style="display: none; padding: 6px 12px; margin-left: 10px; border-radius: 99px; font-size: 12px;" onclick="abrirModalNovoUsuario()">Criar Usuário</button>
+      
+      <button class="btn-outline" style="padding: 6px 12px; margin-left: 10px; border-radius: 99px; font-size: 12px; border-color: var(--border);" onclick="location.reload()">Sair</button>
+    </div>
+  </header>
+
+  <div class="main-container" id="main-app" style="display:none;">
+    
+    <aside class="sidebar">
+      <div class="s-label">Geral</div>
+      <div class="nav-item active" onclick="nav('links')"><span class="nav-icon">🔗</span> Links Rápidos</div>
+      <div class="nav-item" onclick="nav('cronograma')"><span class="nav-icon">📅</span> Cronograma</div>
+      <div class="nav-item" onclick="nav('anotacoes')"><span class="nav-icon">📝</span> Meu Notepad</div>
+      
+      <div class="s-label">Ferramentas</div>
+      <div class="nav-item" onclick="nav('respostas')"><span class="nav-icon">⚡</span> Respostas Prontas</div>
+      <div class="nav-item" onclick="nav('marcas')"><span class="nav-icon">🛡️</span> Regras de Marcas</div>
+      <div class="nav-item" onclick="nav('instrucoes')"><span class="nav-icon">📚</span> Manuais</div>
+      
+      <div class="s-label">Corporativo</div>
+      <div class="nav-item" onclick="nav('treinamento')"><span class="nav-icon">🎓</span> Academy</div>
+      <div class="s-label" id="menu-admin-label" style="display:none; color: var(--red);">Administração</div>
+      <div class="nav-item" id="menu-admin-users" style="display:none;" onclick="nav('usuarios')"><span class="nav-icon">👥</span> Equipe e Acessos</div>
+      <div class="nav-item" id="menu-admin-academy" style="display:none;" onclick="nav('gestao_academy')"><span class="nav-icon">🛠️</span> Gestão Academy</div>
+    </aside>
+
+    <main>
+      <div class="topbar">
+        <div class="topbar-left">
+          <h2 class="page-title" id="page-title">🔗 Links Rápidos</h2>
+          <p class="page-desc" id="page-desc">Plataformas de uso diário.</p>
+        </div>
+
+        <div class="topbar-right">
+          <div id="treinamento-header-tools">
+            <div class="prog-wrap">
+               <div class="prog-track"><div class="prog-fill" id="p-bar"></div></div>
+               <div class="prog-text" id="p-text">Progresso: 0%</div>
+            </div>
+            <div class="xp-badge" id="xp-counter">0 XP</div>
+          </div>
+          <div class="topbar-actions" id="topbar-actions">
+            </div>
+        </div>
+      </div>
+
+<div id="view-links" class="page active">
+        <div class="controls-row">
+          <input type="text" id="search-links" class="search-bar" placeholder="🔍 Buscar links por nome, categoria ou URL..." onkeyup="renderLinks()">
+        </div>
+        <div id="links-content"></div>
+      </div>
+
+      <div id="view-cronograma" class="page">
+        <div class="crono-layout">
+           
+           <div class="crono-sidebar" id="crono-admin-panel" style="display:none;">
+              <h3>Participantes da Escala</h3>
+              <label>NOMES (1 POR LINHA)</label>
+              <textarea id="crono-names" rows="10"></textarea>
+              <button class="btn btn-primary" style="width:100%; justify-content:center;" onclick="gerarEscalaAleatoria()">🔄 Sortear Escala Mágica</button>
+              <span style="font-size: 10px; color: var(--text-sub); display: block; margin-top: 10px; line-height: 1.4;">
+                O sistema usa a planta da sala para evitar que dois vizinhos façam ligação ao mesmo tempo.
+              </span>
+           </div>
+           
+           <div class="crono-main">
+              <div class="crono-header-btn">
+                <button class="btn btn-outline" onclick="abrirModalImpressaoCronograma()">🖨️ Visualizar / Imprimir Cronograma</button>
+              </div>
+              <div class="table-wrapper">
+                <table class="main-table">
+                  <thead>
+                    <tr>
+                      <th>Dia da Semana</th>
+                      <th>Manhã - Ligação</th>
+                      <th>Manhã - E-mail</th>
+                      <th>Tarde - Ligação</th>
+                      <th>Tarde - E-mail</th>
+                    </tr>
+                  </thead>
+                  <tbody id="crono-body"></tbody>
+                </table>
+              </div>
+           </div>
+
+        </div>
+
+        <div class="mapa-sala-wrapper">
+          <div class="mapa-header">
+              <h3>📍 Mapa de Sala Operacional</h3>
+              <div style="display:flex; gap: 15px; align-items:center;">
+                  <button class="btn btn-outline" style="padding: 8px 15px; font-size: 12px;" onclick="imprimirMapa()">🖨️ Imprimir Mapa</button>
+                  <span style="color: var(--text-sub); font-size: 12px; font-weight: 600;" id="mapa-helper-text">Modo Visualização</span>
+              </div>
+          </div>
+          <div class="room-layout" id="room-canvas">
+            
+            <div class="room-door"></div>
+            
+            <div class="room-row top-row" style="padding-left: 60px;">
+                <div class="cluster">
+                    <div class="cluster-title">Mídias/Postagem</div>
+                    <div class="desks-flex">
+                        <div class="desk-unit" id="desk-midia-1"><div class="desk-avatar">👤</div><div class="desk-name">...</div></div>
+                    </div>
+                </div>
+                <div class="cluster">
+                    <div class="cluster-title">Devolução</div>
+                    <div class="desks-flex">
+                        <div class="desk-unit" id="desk-dev-1"><div class="desk-avatar">👤</div><div class="desk-name">...</div></div>
+                        <div class="desk-unit" id="desk-dev-2"><div class="desk-avatar">👤</div><div class="desk-name">...</div></div>
+                        <div class="desk-unit" id="desk-dev-3"><div class="desk-avatar">👤</div><div class="desk-name">...</div></div>
+                        <div class="desk-unit" id="desk-dev-4"><div class="desk-avatar">👤</div><div class="desk-name">...</div></div>
+                        <div class="desk-unit" id="desk-dev-5"><div class="desk-avatar">👤</div><div class="desk-name">...</div></div>
+                        <div class="desk-unit" id="desk-dev-6"><div class="desk-avatar">👤</div><div class="desk-name">...</div></div>
+                        <div class="desk-unit" id="desk-dev-7"><div class="desk-avatar">👤</div><div class="desk-name">...</div></div>
+                        <div class="desk-unit" id="desk-dev-8"><div class="desk-avatar">👤</div><div class="desk-name">...</div></div>
+                        <div class="desk-unit" id="desk-dev-9"><div class="desk-avatar">👤</div><div class="desk-name">...</div></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="room-row mid-row" style="justify-content: center; margin-top: 30px;">
+                <div class="ilha-central">
+                    <div style="display: flex; gap: 12px; padding-bottom: 5px;">
+                         <div class="sub-cluster-title" style="flex: 0 0 calc((75px * 3) + (12px * 2)); text-align: center;">Reclame Aqui</div>
+                         <div class="sub-cluster-title" style="flex: 0 0 calc((75px * 5) + (12px * 4)); text-align: center;">Atendimento / Telefone</div>
+                    </div>
+                    
+                    <div class="ilha-desks">
+                        <div class="desk-unit" id="desk-ra-1"><div class="desk-avatar">👤</div><div class="desk-name">...</div></div>
+                        <div class="desk-unit" id="desk-ra-2"><div class="desk-avatar">👤</div><div class="desk-name">...</div></div>
+                        <div class="desk-unit" id="desk-ra-3"><div class="desk-avatar">👤</div><div class="desk-name">...</div></div>
+                        <div class="desk-unit" id="desk-tel-1"><div class="desk-avatar">👤</div><div class="desk-name">...</div></div>
+                        <div class="desk-unit" id="desk-tel-2"><div class="desk-avatar">👤</div><div class="desk-name">...</div></div>
+                        <div class="desk-unit" id="desk-tel-3"><div class="desk-avatar">👤</div><div class="desk-name">...</div></div>
+                        <div class="desk-unit" id="desk-tel-4"><div class="desk-avatar">👤</div><div class="desk-name">...</div></div>
+                        <div class="desk-unit" id="desk-tel-5"><div class="desk-avatar">👤</div><div class="desk-name">...</div></div>
+                    </div>
+                    
+                    <div class="ilha-table-center" style="grid-column: 1 / -1; width: 100%;"></div>
+                    
+                    <div class="ilha-desks">
+                        <div class="desk-unit" id="desk-orc-1"><div class="desk-avatar">👤</div><div class="desk-name">...</div></div>
+                        <div class="desk-unit" id="desk-orc-2"><div class="desk-avatar">👤</div><div class="desk-name">...</div></div>
+                        <div class="desk-unit" id="desk-tel-6"><div class="desk-avatar">👤</div><div class="desk-name">...</div></div>
+                        <div class="desk-unit" id="desk-tel-7"><div class="desk-avatar">👤</div><div class="desk-name">...</div></div>
+                        <div class="desk-unit" id="desk-tel-8"><div class="desk-avatar">👤</div><div class="desk-name">...</div></div>
+                        <div class="desk-unit" id="desk-tel-9"><div class="desk-avatar">👤</div><div class="desk-name">...</div></div>
+                        <div class="desk-unit" id="desk-tel-10"><div class="desk-avatar">👤</div><div class="desk-name">...</div></div>
+                        <div class="desk-unit" id="desk-tel-11"><div class="desk-avatar">👤</div><div class="desk-name">...</div></div>
+                    </div>
+
+                    <div style="display: flex; gap: 12px; padding-top: 5px;">
+                         <div class="sub-cluster-title bottom" style="flex: 0 0 calc((75px * 2) + (12px * 1)); text-align: center;">Orçamento</div>
+                         <div class="sub-cluster-title bottom" style="flex: 0 0 calc((75px * 6) + (12px * 5)); text-align: center;">Atendimento / Telefone</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="room-row bot-row" style="margin-top: 30px;">
+                <div class="cluster cluster-lideranca">
+                    <div class="cluster-title">Liderança</div>
+                    <div class="desk-unit leader-desk" id="desk-lider-1" style="transform: rotate(90deg); margin: 10px;">
+                        <div class="desk-avatar" style="transform: rotate(-90deg);">👤</div>
+                        <div class="desk-name" style="transform: rotate(-90deg);">...</div>
+                    </div>
+                </div>
+                
+                <div class="cluster" style="margin-left: 40px;">
+                    <div class="cluster-title">Envios</div>
+                    <div class="desks-flex">
+                        <div class="desk-unit" id="desk-err-1"><div class="desk-avatar">👤</div><div class="desk-name">...</div></div>
+                        <div class="desk-unit" id="desk-err-2"><div class="desk-avatar">👤</div><div class="desk-name">...</div></div>
+                    </div>
+                </div>
+                <div class="cluster">
+                    <div class="cluster-title">Pendência</div>
+                    <div class="desks-flex">
+                        <div class="desk-unit" id="desk-pend-1"><div class="desk-avatar">👤</div><div class="desk-name">...</div></div>
+                        <div class="desk-unit" id="desk-pend-2"><div class="desk-avatar">👤</div><div class="desk-name">...</div></div>
+                    </div>
+                </div>
+                <div class="cluster">
+                    <div class="cluster-title">Atrasos e Correções</div>
+                    <div class="desks-flex">
+                        <div class="desk-unit" id="desk-atr-1"><div class="desk-avatar">👤</div><div class="desk-name">...</div></div>
+                        <div class="desk-unit" id="desk-atr-2"><div class="desk-avatar">👤</div><div class="desk-name">...</div></div>
+                    </div>
+                </div>
+                <div class="cluster">
+                    <div class="cluster-title">Personalizado</div>
+                    <div class="desks-flex">
+                        <div class="desk-unit" id="desk-pers-1"><div class="desk-avatar">👤</div><div class="desk-name">...</div></div>
+                    </div>
+                </div>
+            </div>
+
+          </div>
+        </div>
+
+      </div>
+
+      <div id="view-anotacoes" class="page">
+        <div class="notes-grid" id="notes-content"></div>
+      </div>
+
+      <div id="view-respostas" class="page">
+        <div class="controls-row">
+          <input type="text" id="search-resp" class="search-bar" placeholder="🔍 Buscar respostas..." onkeyup="renderRespostas()">
+          <div class="filter-pills" id="filters-resp"></div>
+        </div>
+        <div class="resp-grid" id="resp-content"></div>
+      </div>
+
+      <div id="view-instrucoes" class="page">
+        <div class="controls-row">
+          <input type="text" id="search-inst" class="search-bar" placeholder="🔍 Buscar manuais e processos..." onkeyup="renderInstrucoes()">
+          <div class="filter-pills" id="filters-inst"></div>
+        </div>
+        <div class="inst-grid" id="inst-content"></div>
+      </div>
+
+      <div id="view-marcas" class="page">
+        <div class="controls-row">
+          <input type="text" id="search-marcas" class="search-bar" placeholder="🔍 Buscar marca (Ex: Corsair)..." onkeyup="renderMarcas()">
+        </div>
+        <div class="table-wrapper">
+          <table class="main-table" style="text-align: left;">
+            <thead>
+              <tr>
+                <th style="padding-left: 30px;">Fabricante / Marca</th>
+                <th>Regra de Garantia</th>
+                <th>Responsável RMA</th>
+              </tr>
+            </thead>
+            <tbody id="marcas-body">
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div id="view-usuarios" class="page">
+        <div class="table-wrapper">
+          <table class="main-table">
+            <thead>
+              <tr>
+                <th>Nome Completo</th>
+                <th>Usuário (Login)</th>
+                <th>Perfil</th>
+                <th>Cargo / Função</th>
+                <th>Status</th>
+                <th style="text-align: right;">Ações</th>
+              </tr>
+            </thead>
+            <tbody id="usuarios-body">
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div id="view-gestao_academy" class="page">
+        <div class="table-wrapper">
+          <table class="main-table">
+            <thead>
+              <tr>
+                <th>Ordem</th>
+                <th>Tipo</th>
+                <th>Título do Módulo</th>
+                <th style="text-align: right;">Ações</th>
+              </tr>
+            </thead>
+            <tbody id="gestao-academy-body"></tbody>
+          </table>
+        </div>
+      </div>
+
+  <div class="modal-backdrop" id="modal-form-academy">
+    <div class="modal-box" style="max-width: 650px;">
+      <div class="modal-header">
+        <div class="modal-title" id="ma-title">Nova Etapa do Treinamento</div>
+        <button class="btn-close" onclick="fecharModal('modal-form-academy')">✖</button>
+      </div>
+      <div class="modal-body">
+        <input type="hidden" id="ma-id">
+        <div style="display: flex; gap: 15px;">
+          <div class="form-group" style="flex: 1;">
+            <label class="form-label">Ordem (Ex: 1, 2, 3)</label>
+            <input type="number" class="form-input" id="ma-ordem" value="1">
+          </div>
+          <div class="form-group" style="flex: 3;">
+            <label class="form-label">Tipo de Módulo</label>
+            <select class="form-select" id="ma-tipo" onchange="mudarCamposAcademy()">
+              <option value="teoria">📚 Teoria / Base de Conhecimento</option>
+              <option value="pratica">🎯 Prática / Quiz Múltipla Escolha</option>
+              <option value="login">🚀 Tela de Abertura (Boas-vindas)</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Título da Etapa</label>
+          <input type="text" class="form-input" id="ma-titulo" placeholder="Ex: 1. Bem-vindo à Equipe">
+        </div>
+
+<!-- Campos de Teoria -->
+        <div id="ma-campos-teoria">
+          <div class="form-group">
+            <label class="form-label">Texto Principal</label>
+            <textarea class="form-textarea" id="ma-texto"></textarea>
+          </div>
+<div class="form-group">
+            <label class="form-label">Imagens Principais / Galeria (Opcional)</label>
+            <div id="ma-imagens-container" style="display: flex; flex-direction: column; gap: 8px; margin-bottom: 10px;"></div>
+            <button type="button" class="btn btn-outline" style="width: 100%; font-size: 12px; padding: 8px;" onclick="addImagemMain()">➕ Adicionar Imagem</button>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Destaque (Caixa Vermelha) - Opcional</label>
+            <textarea class="form-textarea" id="ma-destaque" style="min-height: 80px;"></textarea>
+          </div>
+          <!-- NOVA PARTE: CARDS DA TEORIA -->
+          <div class="form-group">
+            <label class="form-label">Cards de Informação (Opcional)</label>
+            <div id="ma-cards-container" style="display: flex; flex-direction: column; gap: 10px; margin-bottom: 10px;"></div>
+            <button type="button" class="btn btn-outline" style="width: 100%; font-size: 12px; padding: 8px;" onclick="addCardTeoria()">➕ Adicionar Card</button>
+          </div>
+        </div>
+
+        <!-- Campos de Prática (Quiz) -->
+        <div id="ma-campos-pratica" style="display:none; background: rgba(0,0,0,0.2); padding: 15px; border-radius: 8px; border: 1px dashed var(--border);">
+          <div class="form-group">
+            <label class="form-label">Cenário / Pergunta</label>
+            <textarea class="form-textarea" id="ma-cenario" style="min-height: 80px;"></textarea>
+          </div>
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 15px;">
+            <input type="text" class="form-input" id="ma-opA" placeholder="Opção A">
+            <input type="text" class="form-input" id="ma-opB" placeholder="Opção B">
+            <input type="text" class="form-input" id="ma-opC" placeholder="Opção C">
+            <input type="text" class="form-input" id="ma-opD" placeholder="Opção D">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Qual é a opção CORRETA?</label>
+            <select class="form-select" id="ma-correta">
+              <option value="A">A</option><option value="B">B</option><option value="C">C</option><option value="D">D</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Feedback (Se Acertar)</label>
+            <input type="text" class="form-input" id="ma-fb-correto">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Feedback (Se Errar)</label>
+            <input type="text" class="form-input" id="ma-fb-erro">
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-outline" onclick="fecharModal('modal-form-academy')">Cancelar</button>
+        <button class="btn btn-primary" onclick="salvarAcademyDB()">Salvar Etapa</button>
+      </div>
+    </div>
+  </div>
+
+      <div id="view-treinamento" class="page">
+         <div id="trilha-container"></div>
+      </div>
+
+    </main>
+  </div>
+
+  <div class="modal-backdrop" id="modal-form">
+    <div class="modal-box">
+      <div class="modal-header">
+        <div class="modal-title" id="mf-title">Título</div>
+        <button class="btn-close" onclick="fecharModal('modal-form')">✖</button>
+      </div>
+      <div class="modal-body" id="mf-body"></div>
+      <div class="modal-footer">
+        <button class="btn btn-outline" onclick="fecharModal('modal-form')">Cancelar</button>
+        <button class="btn btn-primary" id="mf-btn-save">Salvar Alterações</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-backdrop" id="modal-read">
+    <div class="modal-box" style="max-width: 850px;">
+      <div class="modal-header">
+        <div>
+          <span style="font-size: 11px; font-weight: 800; color: var(--red); text-transform: uppercase; letter-spacing: 1px;" id="mr-cat">CATEGORIA</span>
+          <div class="modal-title" id="mr-title" style="margin-top: 6px; font-size: 20px; letter-spacing: -0.5px;">Título da Instrução</div>
+        </div>
+        <button class="btn-close" onclick="fecharModal('modal-read')">✖</button>
+      </div>
+      <div class="modal-body">
+<div id="mr-img-container" style="display:flex; flex-direction:column; gap:15px; margin-bottom:20px;"></div>
+        <div class="read-inst-text" id="mr-text">Texto...</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-print-overlay" id="modal-impressao-cronograma">
+    <div class="modal-print-box">
+      <div class="no-print" style="display: flex; justify-content: flex-end; gap: 12px; margin-bottom: 24px;">
+        <button class="btn" style="background:#f1f5f9; color:#0f172a; font-weight: 700; border:none; padding:10px 18px; border-radius: 8px;" onclick="fecharModalCronograma()">✖ Fechar</button>
+        <button class="btn" style="background:var(--red); color:white; font-weight: 700; border:none; padding:10px 18px; border-radius: 8px;" onclick="window.print()">🖨️ Imprimir Escala</button>
+      </div>
+      <div style="text-align: center; margin-bottom: 30px; border-bottom: 2px solid #e2e8f0; padding-bottom: 15px;">
+        <h1 style="color: #dc2626; font-size: 24px; font-weight: 900; margin-bottom: 5px; font-family: Arial, sans-serif;">CRONOGRAMA OPERACIONAL</h1>
+        <p style="color: #64748b; font-weight: 700; text-transform: uppercase; font-size: 12px; font-family: Arial, sans-serif;">Escala Semanal de Atividades</p>
+      </div>
+      <table style="width: 100%; border-collapse: collapse; font-family: Arial, sans-serif;">
+        <thead>
+          <tr>
+            <th style="background: #f1f5f9; padding: 12px; border: 1px solid #cbd5e1; font-size: 12px; color: #0f172a;">Dia</th>
+            <th style="background: #f1f5f9; padding: 12px; border: 1px solid #cbd5e1; font-size: 12px; color: #0f172a;">Manhã - Ligação</th>
+            <th style="background: #f1f5f9; padding: 12px; border: 1px solid #cbd5e1; font-size: 12px; color: #0f172a;">Manhã - E-mail</th>
+            <th style="background: #f1f5f9; padding: 12px; border: 1px solid #cbd5e1; font-size: 12px; color: #0f172a;">Tarde - Ligação</th>
+            <th style="background: #f1f5f9; padding: 12px; border: 1px solid #cbd5e1; font-size: 12px; color: #0f172a;">Tarde - E-mail</th>
+          </tr>
+        </thead>
+        <tbody id="body-impressao-cronograma"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="modal-backdrop" id="feedbackModal">
+    <div class="modal-box alert-box">
+      <div class="alert-icon" id="fb-icon" style="font-size: 50px;">🎯</div>
+      <div class="alert-title" id="fb-title">Excelente!</div>
+      <div class="alert-text" id="fb-text"></div>
+      <div style="display: flex; justify-content: center; padding-bottom: 10px;">
+        <button class="btn btn-primary" id="fb-btn-action">Continuar ➔</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL DE CRIAÇÃO DE USUÁRIO -->
+  <div class="modal-backdrop" id="modal-criar-usuario">
+    <div class="modal-box" style="max-width: 550px;">
+      <div class="modal-header">
+        <div class="modal-title">👤 Cadastrar Novo Usuário</div>
+        <button class="btn-close" onclick="fecharModal('modal-criar-usuario')">✖</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label class="form-label">Nome Completo *</label>
+          <input type="text" class="form-input" id="nu-nome" placeholder="Ex: João da Silva">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Usuário (Login) *</label>
+          <input type="text" class="form-input" id="nu-login" placeholder="Ex: joao.silva">
+        </div>
+        <div style="display: flex; gap: 15px;">
+          <div class="form-group" style="flex: 1;">
+            <label class="form-label">Senha *</label>
+            <input type="password" class="form-input" id="nu-senha" placeholder="***">
+          </div>
+          <div class="form-group" style="flex: 1;">
+            <label class="form-label">Confirmar Senha *</label>
+            <input type="password" class="form-input" id="nu-senha-conf" placeholder="***">
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Cargo / Função (Opcional)</label>
+          <input type="text" class="form-input" id="nu-cargo" placeholder="Ex: Atendente de Garantia">
+        </div>
+        <div style="display: flex; gap: 15px;">
+          <div class="form-group" style="flex: 1;">
+            <label class="form-label">Perfil de Acesso *</label>
+            <select class="form-select" id="nu-perfil">
+              <option value="Atendimento">Usuário Padrão</option>
+              <option value="Admin">Administrador (ADMIN)</option>
+            </select>
+          </div>
+          <div class="form-group" style="flex: 1;">
+            <label class="form-label">Status *</label>
+            <select class="form-select" id="nu-status">
+              <option value="Ativo">Ativo</option>
+              <option value="Inativo">Inativo</option>
+            </select>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-outline" onclick="fecharModal('modal-criar-usuario')">Cancelar</button>
+        <button class="btn btn-primary" onclick="salvarNovoUsuario()">Salvar Usuário</button>
+      </div>
+    </div>
+  </div>
+
+<script>
+    let GLOBAL = { usuario: null, links: [], marcas: [], cronograma: [], anotacoes: [], respostas: [], instrucoes: [], analistasParaSorteio: [], todosUsuarios: [], mapaSala: [] };
+    let filtroAtualResp = "TUDO"; let filtroAtualInst = "TUDO";
+
+    const $ = id => document.getElementById(id);
+    const loader = (st) => $(st ? 'loader' : 'loader').style.display = st ? 'flex' : 'none';
+    
+    function toast(msg, erro = false) {
+      const box = $('toast');
+      $('toast-msg').innerText = msg;
+      box.style.borderColor = erro ? "var(--danger)" : "var(--red)";
+      box.classList.add('show');
+      setTimeout(() => box.classList.remove('show'), 3500);
+    }
+
+    const runBackend = (fn, ...args) => new Promise((res, rej) => 
+      google.script.run.withSuccessHandler(res).withFailureHandler(rej)[fn](...args)
+    );
+
+    function confirmP(titulo, mensagem, callback) {
+      $('confirm-title').innerText = titulo;
+      $('confirm-text').innerText = mensagem;
+      $('modal-confirm').classList.add('show');
+      $('btn-confirm-yes').onclick = () => {
+        $('modal-confirm').classList.remove('show');
+        callback();
+      };
+    }
+    
+    function fecharConfirm() { $('modal-confirm').classList.remove('show'); }
+    function fecharModal(id) { $(id).classList.remove('show'); }
+
+    function debounce(func, timeout = 300){
+      let timer;
+      return (...args) => {
+        clearTimeout(timer);
+        timer = setTimeout(() => { func.apply(this, args); }, timeout);
+      };
+    }
+    const renderLinksOtimo = debounce(() => renderLinks());
+    const renderRespostasOtimo = debounce(() => renderRespostas());
+    const renderInstrucoesOtimo = debounce(() => renderInstrucoes());
+    const renderMarcasOtimo = debounce(() => renderMarcas());
+
+    // ==========================================
+    // LOGIN
+    // ==========================================
+async function fazerLogin() {
+      const u = $('inp-login').value.trim();
+      const p = $('inp-pass').value.trim();
+      if(!u || !p) return toast("Preencha usuário e senha!", true);
+
+      loader(true);
+      try {
+        const res = await runBackend('autenticarE_Carregar', u, p);
+        if(!res.ok) { loader(false); return toast(res.erro, true); }
+
+        GLOBAL = res.dados;
+        $('login-screen').style.display = 'none';
+        $('main-header').style.display = 'flex';
+        $('main-app').style.display = 'flex';
+        
+        $('ui-name').innerText = GLOBAL.usuario.nome;
+        $('ui-role').innerText = GLOBAL.usuario.setor;
+        $('ui-avatar').innerText = GLOBAL.usuario.nome.charAt(0).toUpperCase();
+        
+        if(GLOBAL.usuario.isAdmin) {
+          $('menu-admin-label').style.display = 'block';
+          $('menu-admin-users').style.display = 'flex';
+          $('menu-admin-academy').style.display = 'flex';
+        }
+
+        renderLinksOtimo();
+        renderCronograma();
+        renderMapaSala(); 
+        renderAnotacoes();
+        renderFiltros('RESPOSTAS');
+        renderRespostasOtimo();
+        renderFiltros('INSTRUCOES');
+        renderInstrucoesOtimo();
+        renderMarcasOtimo(); 
+        processarCursoDinamico();
+
+        nav('links'); 
+        loader(false);
+        toast("Bem-vindo(a), " + GLOBAL.usuario.nome.split(' ')[0] + "!");
+      } catch (e) {
+        loader(false);
+        toast("Erro de conexão: " + e.message, true);
+      }
+    }
+
+    // ==========================================
+    // NAVEGAÇÃO
+    // ==========================================
+    function nav(aba) {
+      document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+      if(event && event.currentTarget.classList.contains('nav-item')) {
+         event.currentTarget.classList.add('active');
+      }
+
+      document.querySelectorAll('.page').forEach(el => el.classList.remove('active'));
+      $('view-' + aba).classList.add('active');
+
+      const titles = {
+        'links': '🔗 Links Rápidos',
+        'cronograma': '📅 Cronograma Operacional',
+        'anotacoes': '📝 Meu Notepad Pessoal',
+        'respostas': '⚡ Banco de Respostas',
+        'instrucoes': '📚 Base de Conhecimento',
+        'marcas': '🛡️ Regras de Garantia (Marcas)',
+        'treinamento': '🎓 Academy',
+        'usuarios': '👥 Gestão de Equipe e Acessos'
+      };
+      const descs = {
+        'links': 'Plataformas e rastreios de uso diário.',
+        'cronograma': 'Escala de tarefas e mapa da equipe.',
+        'anotacoes': 'Clique, digite e pronto. Salvo na nuvem.',
+        'respostas': 'Clique no card para copiar o texto.',
+        'instrucoes': 'Processos e manuais da empresa.',
+        'marcas': 'Consulte se o RMA é direto conosco ou fornecedor.',
+        'treinamento': 'Integração de novos colaboradores.',
+        'usuarios': 'Crie novos acessos ou edite usuários do sistema.'
+      };
+      
+      $('page-title').innerText = titles[aba];
+      if($('page-desc')) $('page-desc').innerText = descs[aba];
+
+      if($('treinamento-header-tools')) {
+         $('treinamento-header-tools').style.display = aba === 'treinamento' ? 'flex' : 'none';
+      }
+
+      let actionsHtml = '';
+      if(aba === 'cronograma' && GLOBAL.usuario.isAdmin) {
+        $('crono-admin-panel').style.display = 'block';
+        $('room-canvas').classList.add('admin-mode');
+        $('mapa-helper-text').innerText = "Modo Edição (Clique para alterar)";
+        $('mapa-helper-text').style.color = "var(--red)";
+        if(!$('crono-names').value) $('crono-names').value = GLOBAL.analistasParaSorteio.join('\n');
+      }
+      else if(aba === 'links' && GLOBAL.usuario.isAdmin) {
+        actionsHtml = '<button class="btn btn-primary" onclick="abrirFormLink()">➕ Novo Link</button>';
+      }
+      else if(aba === 'marcas' && GLOBAL.usuario.isAdmin) {
+        actionsHtml = '<button class="btn btn-primary" onclick="abrirFormMarca()">➕ Nova Marca</button>';
+      }
+      else if(aba === 'respostas' && GLOBAL.usuario.isAdmin) {
+        actionsHtml = '<button class="btn btn-primary" onclick="abrirFormResposta()">➕ Nova Resposta</button>';
+      }
+      else if(aba === 'instrucoes' && GLOBAL.usuario.isAdmin) {
+        actionsHtml = '<button class="btn btn-primary" onclick="abrirFormInstrucao()">➕ Novo Manual</button>';
+      }
+      else if(aba === 'usuarios' && GLOBAL.usuario.isAdmin) {
+        actionsHtml = '<button class="btn btn-outline" style="margin-right: 15px; border-color: var(--warning); color: var(--warning);" onclick="abrirModalCertificados()">📜 Ver Certificados</button>' +
+                      '<button class="btn btn-primary" onclick="abrirModalNovoUsuario()">➕ Novo Usuário</button>';
+        renderTabelaUsuarios();
+      }
+       else if(aba === 'gestao_academy' && GLOBAL.usuario.isAdmin) {
+        actionsHtml = '<button class="btn btn-primary" onclick="abrirFormAcademy()">➕ Nova Etapa</button>';
+        renderTabelaAcademy();
+      }
+      
+      $('topbar-actions').innerHTML = actionsHtml;
+
+      if(aba === 'treinamento' && passoAtual === 0) {
+        renderizarPasso();
+      }
+    }
+
+    // ==========================================
+    // LINKS RÁPIDOS
+    // ==========================================
+    function renderLinks() {
+      let termo = $('search-links') ? $('search-links').value.toLowerCase().trim() : "";
+      const grupos = {};
+      
+      let filtrados = GLOBAL.links.filter(l => l.status !== "Inativo");
+      
+      if (termo) {
+         filtrados = filtrados.filter(l => 
+            (l.nome && String(l.nome).toLowerCase().includes(termo)) || 
+            (l.categoria && String(l.categoria).toLowerCase().includes(termo)) || 
+            (l.url && String(l.url).toLowerCase().includes(termo))
+         );
+      }
+
+      filtrados.sort((a,b) => (a.ordem || 99) - (b.ordem || 99)).forEach(l => {
+        let cat = l.categoria ? String(l.categoria).trim() : "Outros";
+        if(!grupos[cat]) grupos[cat] = [];
+        grupos[cat].push(l);
+      });
+
+      let html = '';
+      for (const cat in grupos) {
+        let emoji = "📌";
+        if(cat.toLowerCase().includes('rastreio') || cat.toLowerCase().includes('transportadora') || cat.toLowerCase().includes('logística')) emoji = "📦";
+        if(cat.toLowerCase().includes('sistema') || cat.toLowerCase().includes('erp') || cat.toLowerCase().includes('essenciais')) emoji = "💻";
+
+        html += '<div class="category-section">';
+        html += '<div class="category-header">' + emoji + ' ' + cat + '</div>';
+        html += '<div class="link-grid">';
+
+        grupos[cat].forEach(l => {
+          let btnAdmin = GLOBAL.usuario.isAdmin ? 
+            '<div class="admin-actions" style="top:10px; right:10px; gap: 6px; z-index: 10;">' +
+              '<button class="btn-icon-admin" style="width:28px; height:28px; font-size:12px; background: var(--bg-surface);" onclick="event.preventDefault(); event.stopPropagation(); abrirFormLink(\'' + l.id + '\')">✏️</button>' +
+              '<button class="btn-icon-admin" style="width:28px; height:28px; font-size:12px; background: rgba(220,38,38,0.15); color: var(--danger); border-color: rgba(220,38,38,0.3);" onclick="event.preventDefault(); event.stopPropagation(); deletarLink(\'' + l.id + '\')">🗑️</button>' +
+            '</div>' : '';
+
+          let rawUrl = l.url || "";
+          let urlValida = rawUrl.startsWith('http') ? rawUrl : "https://" + rawUrl;
+          let urlDisplay = rawUrl.replace("https://", "").replace("http://", "");
+          let favicon = "https://www.google.com/s2/favicons?domain=" + urlValida + "&sz=32";
+
+          html += '<a href="' + urlValida + '" target="_blank" class="link-card" style="padding-right: ' + (GLOBAL.usuario.isAdmin ? '80px' : '20px') + ';">';
+          html += btnAdmin;
+          html += '<div class="link-icon">';
+          html += '<img src="' + favicon + '" onerror="this.style.display=\'none\'; this.nextElementSibling.style.display=\'block\';">';
+          html += '<span class="link-icon-fallback" style="display:none;">🔗</span>';
+          html += '</div>';
+          html += '<div class="link-info">';
+          html += '<div class="link-title">' + (l.nome || 'Sem Nome') + '</div>';
+          html += '<div class="link-url">' + urlDisplay + '</div>';
+          html += '</div></a>';
+        });
+        html += '</div></div>';
+      }
+
+      $('links-content').innerHTML = html || '<div style="color: var(--ink-4); padding: 30px; text-align:center; border: 1px dashed var(--border); border-radius: 12px; background: var(--bg-surface);">Nenhum link encontrado.</div>';
+    }
+
+    function abrirFormLink(id = null) {
+      let l = id ? GLOBAL.links.find(x => x.id === id) : {id:'', categoria:'', nome:'', url:'', status:'Ativo', ordem:1};
+      $('ml-id').value = l.id;
+      $('ml-cat').value = l.categoria;
+      $('ml-nome').value = l.nome;
+      $('ml-url').value = l.url;
+      $('ml-status').value = l.status;
+      $('ml-ordem').value = l.ordem || 1;
+      $('ml-title').innerText = id ? "Editar Link" : "Novo Link";
+      $('modal-form-link').classList.add('show');
+    }
+
+    async function salvarLinkDB() {
+      let obj = {
+        id: $('ml-id').value,
+        categoria: $('ml-cat').value.trim(),
+        nome: $('ml-nome').value.trim(),
+        url: $('ml-url').value.trim(),
+        status: $('ml-status').value,
+        ordem: $('ml-ordem').value
+      };
+      if(!obj.categoria || !obj.nome || !obj.url) return toast("Preencha Categoria, Nome e URL.", true);
+      
+      loader(true);
+      try {
+        let res = await runBackend('salvarLinkDB', GLOBAL.usuario.login, obj);
+        if(!obj.id) GLOBAL.links.push(res);
+        else {
+          let idx = GLOBAL.links.findIndex(a => a.id === obj.id);
+          GLOBAL.links[idx] = res;
+        }
+        renderLinks();
+        fecharModal('modal-form-link');
+        toast("Link salvo com sucesso!");
+      } catch(e) { toast("Erro: " + e.message, true); }
+      loader(false);
+    }
+
+    function deletarLink(id) {
+      confirmP("Excluir Link?", "Remover este link do sistema?", async () => {
+        loader(true);
+        try {
+          await runBackend('excluirLinkDB', GLOBAL.usuario.login, id);
+          GLOBAL.links = GLOBAL.links.filter(a => a.id !== id);
+          renderLinks();
+          toast("Link excluído.");
+        } catch(e) { toast("Erro: " + e.message, true); }
+        loader(false);
+      });
+    }
+
+    // ==========================================
+    // CRONOGRAMA
+    // ==========================================
+    function renderCronograma() {
+      if(GLOBAL.cronograma.length === 0) {
+        let emptyTr = '<tr><td colspan="5" style="text-align:center; padding: 30px; color: var(--ink-4);">Nenhuma escala definida para esta semana.</td></tr>';
+        $('crono-body').innerHTML = emptyTr;
+        $('body-impressao-cronograma').innerHTML = emptyTr;
+        return;
+      }
+      
+      let html = '';
+      let htmlPrint = '';
+      GLOBAL.cronograma.forEach(r => {
+        html += '<tr>';
+        html += '<td class="slot-time print-dia" style="color:#e11919; font-weight:800;">' + r.dia + '</td>';
+        html += '<td>' + (r.m_lig || '-') + '</td>';
+        html += '<td>' + (r.m_email || '-') + '</td>';
+        html += '<td>' + (r.t_lig || '-') + '</td>';
+        html += '<td>' + (r.t_email || '-') + '</td>';
+        html += '</tr>';
+        
+        htmlPrint += '<tr>';
+        htmlPrint += '<td class="print-dia" style="color:#dc2626; font-weight:800; background:#f8fafc; text-align:left;">' + r.dia + '</td>';
+        htmlPrint += '<td style="color:#0f172a; border: 1px solid #cbd5e1;">' + (r.m_lig || '-') + '</td>';
+        htmlPrint += '<td style="color:#0f172a; border: 1px solid #cbd5e1;">' + (r.m_email || '-') + '</td>';
+        htmlPrint += '<td style="color:#0f172a; border: 1px solid #cbd5e1;">' + (r.t_lig || '-') + '</td>';
+        htmlPrint += '<td style="color:#0f172a; border: 1px solid #cbd5e1;">' + (r.t_email || '-') + '</td>';
+        htmlPrint += '</tr>';
+      });
+      $('crono-body').innerHTML = html;
+      $('body-impressao-cronograma').innerHTML = htmlPrint; 
+    }
+
+    function abrirModalImpressaoCronograma() { $('modal-impressao-cronograma').classList.add('show'); }
+    function fecharModalCronograma() { $('modal-impressao-cronograma').classList.remove('show'); }
+
+    async function gerarEscalaAleatoria() {
+      const texto = $('crono-names').value.trim();
+      if(!texto) return toast("Insira os nomes para o sorteio!", true);
+
+      let analistas = texto.split('\n').map(n => n.trim()).filter(n => n);
+      if(analistas.length < 2) return toast("Mínimo de 2 participantes!", true);
+
+      confirmP("Gerar Escala Inteligente?", "O sistema cruzará os dados do Mapa de Sala para evitar duplas de ligação. Deseja continuar?", async () => {
+        const deskColors = {
+          'desk-midia-1': 0,
+          'desk-dev-1': 0, 'desk-dev-2': 1, 'desk-dev-3': 0, 'desk-dev-4': 1, 'desk-dev-5': 0, 'desk-dev-6': 1, 'desk-dev-7': 0, 'desk-dev-8': 1, 'desk-dev-9': 0,
+          'desk-ra-1': 0, 'desk-ra-2': 1, 'desk-ra-3': 0, 'desk-tel-1': 1, 'desk-tel-2': 0, 'desk-tel-3': 1, 'desk-tel-4': 0, 'desk-tel-5': 1,
+          'desk-orc-1': 1, 'desk-orc-2': 0, 'desk-tel-6': 1, 'desk-tel-7': 0, 'desk-tel-8': 1, 'desk-tel-9': 0, 'desk-tel-10': 1, 'desk-tel-11': 0,
+          'desk-lider-1': 0,
+          'desk-err-1': 0, 'desk-err-2': 1,
+          'desk-pend-1': 0, 'desk-pend-2': 1,
+          'desk-atr-1': 0, 'desk-atr-2': 1,
+          'desk-pers-1': 0
+        };
+
+        let grupoA = []; 
+        let grupoB = []; 
+        
+        analistas = analistas.sort(() => 0.5 - Math.random());
+
+        analistas.forEach(nome => {
+           let nomeLimpo = nome.toLowerCase();
+           let mapItem = GLOBAL.mapaSala.find(m => m.analista.toLowerCase() === nomeLimpo);
+           
+           if(mapItem && deskColors[mapItem.id] !== undefined) {
+               if(deskColors[mapItem.id] === 0) grupoA.push(nome);
+               else grupoB.push(nome);
+           } else {
+               if(grupoA.length <= grupoB.length) grupoA.push(nome);
+               else grupoB.push(nome);
+           }
+        });
+
+        const diasSemana = ["Segunda-feira", "Terça-feira", "Quarta-feira", "Quinta-feira", "Sexta-feira"];
+        let novaEscala = [];
+        
+        diasSemana.forEach((dia, index) => {
+          let strGrupoA = grupoA.join(', ');
+          let strGrupoB = grupoB.join(', ');
+          
+          if(index % 2 === 0) {
+             novaEscala.push([dia, strGrupoA, strGrupoB, strGrupoB, strGrupoA]);
+          } else {
+             novaEscala.push([dia, strGrupoB, strGrupoA, strGrupoA, strGrupoB]);
+          }
+        });
+
+        loader(true);
+        try {
+          await runBackend('salvarCronograma', GLOBAL.usuario.login, novaEscala);
+          GLOBAL.cronograma = novaEscala.map(r => ({dia: r[0], m_lig: r[1], m_email: r[2], t_lig: r[3], t_email: r[4]}));
+          renderCronograma();
+          toast("Escala Inteligente Gerada!");
+        } catch(e) { toast("Erro ao salvar: " + e.message, true); }
+        loader(false);
+      });
+    }
+
+    // ==========================================
+    // MAPA DE SALA
+    // ==========================================
+    function imprimirMapa() {
+      document.body.classList.add('print-map-mode');
+      window.print();
+      document.body.classList.remove('print-map-mode');
+    }
+
+    function renderMapaSala() {
+      document.querySelectorAll('.desk-unit').forEach(el => {
+        el.classList.add('empty');
+        el.querySelector('.desk-name').innerText = "Vazio";
+        el.onclick = null;
+      });
+
+      GLOBAL.mapaSala.forEach(m => {
+         let el = $(m.id);
+         if(el && m.analista) {
+            el.classList.remove('empty');
+            el.querySelector('.desk-name').innerText = m.analista;
+         }
+      });
+
+      if(GLOBAL.usuario.isAdmin) {
+         document.querySelectorAll('.desk-unit').forEach(el => {
+            el.onclick = () => abrirModalMesa(el.id);
+         });
+      }
+    }
+
+    function abrirModalMesa(deskId) {
+      let data = GLOBAL.mapaSala.find(m => m.id === deskId);
+      
+      $('edit-mesa-id').value = deskId;
+      $('edit-mesa-setor').value = data ? data.setor : "";
+      $('edit-mesa-analista').value = data ? data.analista : "";
+      
+      $('modal-edit-mesa').classList.add('show');
+    }
+
+    async function salvarMesaUI() {
+      let id = $('edit-mesa-id').value;
+      let setor = $('edit-mesa-setor').value.trim();
+      let analista = $('edit-mesa-analista').value.trim();
+      
+      loader(true);
+      try {
+        await runBackend('salvarMesaMap', GLOBAL.usuario.login, id, setor, analista);
+        
+        let idx = GLOBAL.mapaSala.findIndex(m => m.id === id);
+        if(idx !== -1) {
+           GLOBAL.mapaSala[idx].setor = setor;
+           GLOBAL.mapaSala[idx].analista = analista;
+        } else {
+           GLOBAL.mapaSala.push({id, setor, analista});
+        }
+
+        renderMapaSala();
+        $('modal-edit-mesa').classList.remove('show');
+        toast("Posição salva no Mapa!");
+      } catch(e) { toast("Erro ao salvar: " + e.message, true); }
+      loader(false);
+    }
+
+    // ==========================================
+    // NOTEPAD (ANOTAÇÕES)
+    // ==========================================
+    const coresNotepad = ['bg-yellow', 'bg-blue', 'bg-green', 'bg-pink', 'bg-purple', 'bg-gray'];
+    function renderAnotacoes() {
+      let html = '<div class="note-add-btn" onclick="addNovaAnotacaoLocal()"><i>+</i><span style="font-weight: 700; text-transform: uppercase; letter-spacing: 1px;">Criar Post-it</span></div>';
+
+      GLOBAL.anotacoes.reverse().forEach(n => {
+        let paleta = coresNotepad.map(c => '<div class="color-dot ' + c + '" onclick="mudarCorNota(\'' + n.id + '\', \'' + c + '\')"></div>').join('');
+        html += '<div class="note-card ' + n.cor + '" id="note-' + n.id + '">';
+        html += '<div class="note-topbar">';
+        html += '<div class="note-colors">' + paleta + '</div>';
+        html += '<button class="btn-del-note" onclick="deletarAnotacao(\'' + n.id + '\')">✖</button>';
+        html += '</div>';
+        html += '<div class="note-title" contenteditable="true" onblur="salvarAnotacaoBlur(\'' + n.id + '\')">' + n.titulo + '</div>';
+        html += '<div class="note-body" contenteditable="true" onblur="salvarAnotacaoBlur(\'' + n.id + '\')">' + n.conteudo + '</div>';
+        html += '<div class="note-date">' + n.data + '</div>';
+        html += '</div>';
+      });
+      $('notes-content').innerHTML = html;
+      GLOBAL.anotacoes.reverse(); 
+    }
+
+    function addNovaAnotacaoLocal() {
+      const newId = "N-" + new Date().getTime();
+      const obj = { id: newId, login: GLOBAL.usuario.login, titulo: "", conteudo: "", cor: "bg-yellow", data: "Agora", isEdit: false };
+      GLOBAL.anotacoes.push(obj);
+      renderAnotacoes();
+      setTimeout(() => {
+        const card = document.getElementById("note-" + newId);
+        if(card) card.querySelector('.note-title').focus();
+      }, 50);
+    }
+
+    function mudarCorNota(id, novaCor) {
+      let idx = GLOBAL.anotacoes.findIndex(a => a.id === id);
+      GLOBAL.anotacoes[idx].cor = novaCor;
+      GLOBAL.anotacoes[idx].isEdit = true;
+      document.getElementById("note-" + id).className = "note-card " + novaCor;
+      runBackend('salvarAnotacao', GLOBAL.usuario.login, GLOBAL.anotacoes[idx]); 
+    }
+
+    function salvarAnotacaoBlur(id) {
+      const card = document.getElementById("note-" + id);
+      const t = card.querySelector('.note-title').innerText.trim();
+      const c = card.querySelector('.note-body').innerText.trim();
+      
+      let idx = GLOBAL.anotacoes.findIndex(a => a.id === id);
+      let isNew = !GLOBAL.anotacoes[idx].isEdit;
+      
+      if (GLOBAL.anotacoes[idx].titulo === t && GLOBAL.anotacoes[idx].conteudo === c && !isNew) return;
+      
+      if (!t && !c && isNew) {
+         GLOBAL.anotacoes.splice(idx, 1);
+         renderAnotacoes();
+         return;
+      }
+
+      GLOBAL.anotacoes[idx].titulo = t;
+      GLOBAL.anotacoes[idx].conteudo = c;
+      GLOBAL.anotacoes[idx].isEdit = true;
+      runBackend('salvarAnotacao', GLOBAL.usuario.login, GLOBAL.anotacoes[idx]);
+    }
+
+    function deletarAnotacao(id) {
+      confirmP("Excluir Anotação?", "Este post-it será apagado permanentemente.", () => {
+        runBackend('excluirAnotacao', GLOBAL.usuario.login, id);
+        GLOBAL.anotacoes = GLOBAL.anotacoes.filter(a => a.id !== id);
+        renderAnotacoes();
+      });
+    }
+
+    // ==========================================
+    // RESPOSTAS E INSTRUÇÕES
+    // ==========================================
+    function renderFiltros(tipo) {
+      let array = tipo === 'RESPOSTAS' ? GLOBAL.respostas : GLOBAL.instrucoes;
+      let divId = tipo === 'RESPOSTAS' ? 'filters-resp' : 'filters-inst';
+      let fnClick = tipo === 'RESPOSTAS' ? 'setFiltroResp' : 'setFiltroInst';
+      let filtroAtivo = tipo === 'RESPOSTAS' ? filtroAtualResp : filtroAtualInst;
+
+      let cats = new Set(array.map(i => String(i.categoria).trim().toUpperCase()));
+      let catsArr = ["TUDO", ...Array.from(cats).sort()];
+
+      let html = catsArr.map(c => '<div class="pill ' + (c === filtroAtivo ? 'active' : '') + '" onclick="' + fnClick + '(\'' + c + '\')">' + c + '</div>').join('');
+      $(divId).innerHTML = html;
+    }
+
+    function setFiltroResp(cat) { filtroAtualResp = cat; renderFiltros('RESPOSTAS'); renderRespostas(); }
+    function setFiltroInst(cat) { filtroAtualInst = cat; renderFiltros('INSTRUCOES'); renderInstrucoes(); }
+
+    function renderRespostas() {
+      let termo = $('search-resp').value.toLowerCase();
+      let filtrado = GLOBAL.respostas.filter(r => {
+        let matchCat = filtroAtualResp === "TUDO" || String(r.categoria).toUpperCase() === filtroAtualResp;
+        let matchTxt = r.titulo.toLowerCase().includes(termo) || r.conteudo.toLowerCase().includes(termo);
+        return matchCat && matchTxt;
+      });
+
+      let html = filtrado.map(r => {
+        let btnAdmin = GLOBAL.usuario.isAdmin ? 
+          '<div class="admin-actions">' +
+            '<button class="btn-icon-admin" onclick="event.stopPropagation(); abrirFormResposta(\'' + r.id + '\')">✏️</button>' +
+            '<button class="btn-icon-admin" onclick="event.stopPropagation(); deletarResposta(\'' + r.id + '\')">🗑️</button>' +
+          '</div>' : '';
+
+        return '<div class="resp-card" onclick="copiarTextoPorId(this, \'' + r.id + '\')">' +
+                 btnAdmin +
+                 '<div><span class="resp-cat">' + r.categoria + '</span></div>' +
+                 '<div class="resp-title">' + r.titulo + '</div>' +
+                 '<div class="resp-content">' + r.conteudo + '</div>' +
+               '</div>';
+      }).join('');
+      
+      $('resp-content').innerHTML = html || '<div style="grid-column: 1/-1; color: var(--ink-4); border: 1px dashed var(--border); padding: 30px; text-align:center; border-radius: 12px;">Nenhuma resposta encontrada.</div>';
+    }
+
+    function copiarTextoPorId(element, id) {
+      let resp = GLOBAL.respostas.find(r => r.id === id);
+      if(!resp) return;
+      navigator.clipboard.writeText(resp.conteudo).then(() => {
+        let originalBg = element.style.background;
+        element.style.background = "rgba(16, 185, 129, 0.15)";
+        element.style.borderColor = "var(--success)";
+        toast("Copiado com sucesso!");
+        setTimeout(() => {
+          element.style.background = originalBg;
+          element.style.borderColor = "var(--border)";
+        }, 600);
+      });
+    }
+
+    function renderInstrucoes() {
+      let termo = $('search-inst').value.toLowerCase();
+      let filtrado = GLOBAL.instrucoes.filter(r => {
+        let matchCat = filtroAtualInst === "TUDO" || String(r.categoria).toUpperCase() === filtroAtualInst;
+        let matchTxt = r.titulo.toLowerCase().includes(termo) || r.conteudo.toLowerCase().includes(termo);
+        return matchCat && matchTxt;
+      });
+
+      let html = filtrado.map(r => {
+        let btnAdmin = GLOBAL.usuario.isAdmin ? 
+          '<div class="admin-actions">' +
+            '<button class="btn-icon-admin" style="background:rgba(0,0,0,0.7);" onclick="event.stopPropagation(); abrirFormInstrucao(\'' + r.id + '\')">✏️</button>' +
+            '<button class="btn-icon-admin" style="background:rgba(220,38,38,0.8); color:white;" onclick="event.stopPropagation(); deletarInstrucao(\'' + r.id + '\')">🗑️</button>' +
+          '</div>' : '';
+
+let primeiraImg = r.imagem ? r.imagem.split(',')[0].trim() : '';
+        let imgBloco = primeiraImg ? '<img src="' + primeiraImg + '">' : '<div class="inst-icon-fallback">📚</div>';
+        
+        return '<div class="inst-card" onclick="lerInstrucao(\'' + r.id + '\')">' +
+                 '<div class="inst-img-wrapper">' + btnAdmin + imgBloco + '</div>' +
+                 '<div class="inst-body">' +
+                   '<div class="inst-cat">' + r.categoria + '</div>' +
+                   '<div class="inst-title">' + r.titulo + '</div>' +
+                   '<div class="inst-desc">' + r.conteudo + '</div>' +
+                 '</div>' +
+               '</div>';
+      }).join('');
+      
+      $('inst-content').innerHTML = html || '<div style="grid-column: 1/-1; color: var(--ink-4); border: 1px dashed var(--border); padding: 30px; text-align:center; border-radius: 12px;">Nenhum manual encontrado.</div>';
+    }
+
+function lerInstrucao(id) {
+      let inst = GLOBAL.instrucoes.find(i => i.id === id);
+      if(!inst) return;
+      $('mr-cat').innerText = inst.categoria;
+      $('mr-title').innerText = inst.titulo;
+      $('mr-text').innerText = inst.conteudo;
+      
+      let containerImgs = $('mr-img-container');
+      containerImgs.innerHTML = '';
+      if(inst.imagem) {
+        let imgs = inst.imagem.split(',');
+        imgs.forEach(url => {
+          if(url.trim()) {
+            containerImgs.innerHTML += '<img class="read-inst-img" src="' + url.trim() + '" alt="Imagem Auxiliar" style="margin-bottom: 0;">';
+          }
+        });
+        containerImgs.style.display = 'flex';
+      } else {
+        containerImgs.style.display = 'none';
+      }
+            $('modal-read').classList.add('show'); 
+    }
+
+    function abrirFormResposta(id = null) {
+      let n = id ? GLOBAL.respostas.find(a => a.id === id) : {id:'', categoria:'', titulo:'', conteudo:''};
+      
+      $('mf-title').innerText = id ? "Editar Resposta Pronta" : "Criar Resposta Pronta";
+      $('mf-body').innerHTML = 
+        '<div class="form-group"><label class="form-label">Setor / Categoria</label><input type="text" class="form-input" id="frm-cat" value="' + n.categoria + '" style="text-transform:uppercase;"></div>' +
+        '<div class="form-group"><label class="form-label">Título Breve</label><input type="text" class="form-input" id="frm-titulo" value="' + n.titulo + '"></div>' +
+        '<div class="form-group"><label class="form-label">Texto da Resposta</label><textarea class="form-textarea" id="frm-conteudo">' + n.conteudo + '</textarea></div>';
+      
+      $('mf-btn-save').onclick = () => salvarRespostaReal(id);
+      $('modal-form').classList.add('show');
+    }
+
+    async function salvarRespostaReal(id) {
+      let obj = {
+        id: id,
+        categoria: $('frm-cat').value.trim().toUpperCase(),
+        titulo: $('frm-titulo').value.trim(),
+        conteudo: $('frm-conteudo').value.trim()
+      };
+      if(!obj.categoria || !obj.titulo || !obj.conteudo) return toast("Preencha todos os campos.", true);
+
+      loader(true);
+      try {
+        let res = await runBackend('salvarResposta', GLOBAL.usuario.login, obj);
+        if(!obj.id) GLOBAL.respostas.push(res);
+        else {
+          let idx = GLOBAL.respostas.findIndex(a => a.id === obj.id);
+          GLOBAL.respostas[idx] = res;
+        }
+        renderFiltros('RESPOSTAS');
+        renderRespostas();
+        fecharModal('modal-form');
+        toast("Resposta Salva no Banco!");
+      } catch(e) { toast("Erro: " + e.message, true); }
+      loader(false);
+    }
+
+    function deletarResposta(id) {
+      confirmP("Excluir Resposta?", "Isto removerá a resposta para todos os analistas.", async () => {
+        loader(true);
+        try {
+          await runBackend('excluirResposta', GLOBAL.usuario.login, id);
+          GLOBAL.respostas = GLOBAL.respostas.filter(a => a.id !== id);
+          renderFiltros('RESPOSTAS');
+          renderRespostas();
+          toast("Resposta apagada.");
+        } catch(e) { toast("Erro: " + e.message, true); }
+        loader(false);
+      });
+    }
+
+function abrirFormInstrucao(id = null) {
+      let n = id ? GLOBAL.instrucoes.find(a => a.id === id) : {id:'', categoria:'', titulo:'', conteudo:'', imagem:''};
+      
+      $('mf-title').innerText = id ? "Editar Manual" : "Criar Manual de Processo";
+      $('mf-body').innerHTML = 
+        '<div class="form-group"><label class="form-label">Grupo de Conhecimento</label><input type="text" class="form-input" id="frm-cat" value="' + n.categoria + '" style="text-transform:uppercase;"></div>' +
+        '<div class="form-group"><label class="form-label">Título do Processo</label><input type="text" class="form-input" id="frm-titulo" value="' + n.titulo + '"></div>' +
+        '<div class="form-group">' +
+          '<label class="form-label">Imagens do Processo (Cole URLs ou dê Ctrl+V do Print)</label>' +
+          '<div id="frm-img-container" style="display: flex; flex-direction: column; gap: 8px; margin-bottom: 10px;"></div>' +
+          '<button type="button" class="btn btn-outline" style="width: 100%; font-size: 12px; padding: 8px;" onclick="addImagemInstrucao()">➕ Adicionar Imagem</button>' +
+        '</div>' +
+        '<div class="form-group"><label class="form-label">Texto Instrutivo</label><textarea class="form-textarea" id="frm-conteudo">' + n.conteudo + '</textarea></div>';
+      
+      setTimeout(() => {
+        if(n.imagem) {
+          n.imagem.split(',').forEach(url => addImagemInstrucao(url.trim()));
+        } else {
+          addImagemInstrucao(); 
+        }
+      }, 50);
+
+      $('mf-btn-save').onclick = () => salvarInstrucaoReal(id);
+      $('modal-form').classList.add('show');
+    }
+async function salvarInstrucaoReal(id) {
+      let urls = Array.from(document.querySelectorAll('.inst-imagem-url'))
+                      .map(el => el.value.trim())
+                      .filter(url => url !== '')
+                      .join(',');
+
+      let obj = {
+        id: id,
+        categoria: $('frm-cat').value.trim().toUpperCase(),
+        titulo: $('frm-titulo').value.trim(),
+        imagem: urls,
+        conteudo: $('frm-conteudo').value.trim()
+      };
+      if(!obj.categoria || !obj.titulo || !obj.conteudo) return toast("Preencha Categoria, Título e Conteúdo.", true);
+
+      loader(true);
+      try {
+        let res = await runBackend('salvarInstrucao', GLOBAL.usuario.login, obj);
+        if(!obj.id) GLOBAL.instrucoes.push(res);
+        else {
+          let idx = GLOBAL.instrucoes.findIndex(a => a.id === obj.id);
+          GLOBAL.instrucoes[idx] = res;
+        }
+        renderFiltros('INSTRUCOES');
+        renderInstrucoes();
+        fecharModal('modal-form');
+        toast("Manual Salvo e Distribuído!");
+      } catch(e) { toast("Erro: " + e.message, true); }
+      loader(false);
+    }
+
+    function addImagemInstrucao(url = '') {
+      const container = $('frm-img-container');
+      const imgId = 'img-inst-' + Date.now() + Math.random().toString(36).substr(2, 5);
+      const html = '<div id="' + imgId + '" style="display: flex; gap: 10px; align-items: center;">' +
+                     '<input type="text" class="form-input inst-imagem-url" value="' + url + '" placeholder="URL da imagem ou Ctrl+V..." style="flex: 1;">' +
+                     '<button type="button" class="btn-close" style="color: var(--danger); font-size: 18px;" onclick="document.getElementById(\'' + imgId + '\').remove()">✖</button>' +
+                   '</div>';
+      container.insertAdjacentHTML('beforeend', html);
+    }
+
+    function deletarInstrucao(id) {
+      confirmP("Excluir Manual?", "Tem certeza que deseja apagar essa instrução do sistema?", async () => {
+        loader(true);
+        try {
+          await runBackend('excluirInstrucao', GLOBAL.usuario.login, id);
+          GLOBAL.instrucoes = GLOBAL.instrucoes.filter(a => a.id !== id);
+          renderFiltros('INSTRUCOES');
+          renderInstrucoes();
+          toast("Manual apagado.");
+        } catch(e) { toast("Erro: " + e.message, true); }
+        loader(false);
+      });
+    }
+
+    // ==========================================
+    // REGRAS DE MARCAS (RMA)
+    // ==========================================
+    function renderMarcas() {
+      let termo = $('search-marcas').value.toLowerCase().trim();
+      let html = '';
+      GLOBAL.marcas.forEach(m => {
+         if (termo && !m.marca.toLowerCase().includes(termo) && !m.regra.toLowerCase().includes(termo)) return;
+         
+         let badge = "";
+         if (m.tipo === "RMA") badge = '<span class="rma-badge rma">RMA</span>';
+         else if (m.tipo === "FORNECEDOR") badge = '<span class="rma-badge rma-fornecedor">RMA Peças</span>';
+         else badge = '<span class="rma-badge" style="background:#334155; color:white;">Regra Mista</span>';
+
+         let btnAdmin = GLOBAL.usuario.isAdmin ? 
+            '<button class="btn btn-outline" style="padding: 4px 8px; font-size:10px; margin-right: 5px;" onclick="abrirFormMarca(\'' + m.id + '\')">✏️</button>' +
+            '<button class="btn btn-outline" style="padding: 4px 8px; font-size:10px; border-color:var(--danger); color:var(--danger);" onclick="deletarMarca(\'' + m.id + '\')">🗑️</button>' : '';
+
+         html += '<tr>' +
+                   '<td style="padding-left: 30px; font-weight: 800; color: white;">' + m.marca + '</td>' +
+                   '<td>' + m.regra + '</td>' +
+                   '<td>' + badge + '</td>' +
+                   '<td style="text-align:right;">' + btnAdmin + '</td>' +
+                 '</tr>';
+      });
+      $('marcas-body').innerHTML = html || '<tr><td colspan="4" style="text-align:center; padding: 20px; color: var(--ink-4);">Marca não encontrada.</td></tr>';
+    }
+
+    function abrirFormMarca(id = null) {
+      let m = id ? GLOBAL.marcas.find(x => x.id === id) : {id:'', marca:'', regra:'', tipo:'FORNECEDOR'};
+      $('mm-id').value = m.id;
+      $('mm-marca').value = m.marca;
+      $('mm-regra').value = m.regra;
+      $('mm-tipo').value = m.tipo;
+      $('mm-title').innerText = id ? "Editar Marca" : "Nova Marca";
+      $('modal-form-marca').classList.add('show');
+    }
+
+    async function salvarMarcaDB() {
+      let obj = {
+        id: $('mm-id').value,
+        marca: $('mm-marca').value.trim().toUpperCase(),
+        regra: $('mm-regra').value.trim(),
+        tipo: $('mm-tipo').value
+      };
+      if(!obj.marca || !obj.regra) return toast("Preencha Marca e Regra.", true);
+      
+      loader(true);
+      try {
+        let res = await runBackend('salvarMarcaDB', GLOBAL.usuario.login, obj);
+        if(!obj.id) GLOBAL.marcas.push(res);
+        else {
+          let idx = GLOBAL.marcas.findIndex(a => a.id === obj.id);
+          GLOBAL.marcas[idx] = res;
+        }
+        renderMarcas();
+        fecharModal('modal-form-marca');
+        toast("Marca salva com sucesso!");
+      } catch(e) { toast("Erro: " + e.message, true); }
+      loader(false);
+    }
+
+    function deletarMarca(id) {
+      confirmP("Excluir Marca?", "Remover essa marca da base?", async () => {
+        loader(true);
+        try {
+          await runBackend('excluirMarcaDB', GLOBAL.usuario.login, id);
+          GLOBAL.marcas = GLOBAL.marcas.filter(a => a.id !== id);
+          renderMarcas();
+          toast("Marca excluída.");
+        } catch(e) { toast("Erro: " + e.message, true); }
+        loader(false);
+      });
+    }
+
+    // ==========================================
+    // CRIAÇÃO / EDIÇÃO DE USUÁRIOS
+    // ==========================================
+    function abrirModalNovoUsuario(login = null) {
+      let u = login ? GLOBAL.todosUsuarios.find(x => x.login === login) : {nome:'', login:'', senha:'', cargo:'', perfil:'Atendimento', status:'Ativo'};
+      
+      $('nu-nome').value = u.nome;
+      $('nu-login').value = u.login;
+      $('nu-login').disabled = login ? true : false; 
+      $('nu-senha').value = '';
+      $('nu-senha-conf').value = '';
+      $('nu-cargo').value = u.cargo !== '-' ? u.cargo : '';
+      $('nu-perfil').value = u.perfil;
+      $('nu-status').value = u.status;
+      
+      $('modal-criar-usuario').setAttribute('data-edit', login ? 'true' : 'false');
+      $('modal-criar-usuario').querySelector('.modal-title').innerText = login ? "👤 Editar Usuário" : "👤 Cadastrar Novo Usuário";
+      $('modal-criar-usuario').classList.add('show');
+    }
+
+    async function salvarNovoUsuario() {
+      const isEdit = $('modal-criar-usuario').getAttribute('data-edit') === 'true';
+      const obj = { 
+        nome: $('nu-nome').value.trim(), 
+        login: $('nu-login').value.trim(), 
+        senha: $('nu-senha').value, 
+        perfil: $('nu-perfil').value, 
+        cargo: $('nu-cargo').value.trim(), 
+        status: $('nu-status').value,
+        isEdit: isEdit
+      };
+
+      if (!obj.nome || !obj.login || (!isEdit && !obj.senha)) {
+        return toast("Preencha todos os campos obrigatórios (*)", true);
+      }
+      if (obj.senha !== $('nu-senha-conf').value) {
+        return toast("As senhas digitadas não coincidem!", true);
+      }
+
+      loader(true);
+      try {
+        const res = await runBackend('salvarUsuarioDB', GLOBAL.usuario.login, obj);
+        if (!res.ok) {
+          loader(false);
+          return toast(res.erro, true);
+        }
+        
+        if (isEdit) {
+           let idx = GLOBAL.todosUsuarios.findIndex(u => u.login === obj.login);
+           GLOBAL.todosUsuarios[idx] = { nome: obj.nome, login: obj.login, perfil: obj.perfil, cargo: obj.cargo || '-', status: obj.status };
+        } else {
+           GLOBAL.todosUsuarios.push({ nome: obj.nome, login: obj.login, perfil: obj.perfil, cargo: obj.cargo || '-', status: obj.status });
+        }
+        
+        if($('view-usuarios').classList.contains('active')) renderTabelaUsuarios();
+        fecharModal('modal-criar-usuario');
+        toast(isEdit ? "Usuário atualizado!" : "Usuário cadastrado com sucesso!");
+      } catch(e) {
+        toast("Erro ao salvar: " + e.message, true);
+      }
+      loader(false);
+    }
+
+    function renderTabelaUsuarios() {
+      if(!GLOBAL.todosUsuarios) return;
+      let html = '';
+      
+      GLOBAL.todosUsuarios.forEach(u => {
+        let statusBadge = u.status === 'Ativo' 
+          ? '<span class="rma-badge rma" style="background:rgba(16,185,129,0.15); color:var(--success); border-color:rgba(16,185,129,0.3);">ATIVO</span>' 
+          : '<span class="rma-badge" style="background:rgba(239,68,68,0.15); color:var(--danger); border-color:rgba(239,68,68,0.3);">INATIVO</span>';
+
+        let btnAcao = u.login.toLowerCase() !== GLOBAL.usuario.login.toLowerCase() 
+          ? '<button class="btn btn-outline" style="padding: 6px 12px; margin-right: 5px; font-size: 11px;" onclick="abrirModalNovoUsuario(\'' + u.login + '\')">✏️ Editar</button>' +
+            '<button class="btn btn-outline" style="padding: 6px 12px; font-size: 11px; border-color: var(--border); color: var(--text-sub);" onclick="deletarUsuario(\'' + u.login + '\')">🗑️ Excluir</button>' 
+          : '<button class="btn btn-outline" style="padding: 6px 12px; margin-right: 5px; font-size: 11px;" onclick="abrirModalNovoUsuario(\'' + u.login + '\')">✏️ Editar Perfil</button>';
+
+        html += '<tr>' +
+                  '<td style="font-weight: 800; color: var(--text-main);">' + u.nome + '</td>' +
+                  '<td>' + u.login + '</td>' +
+                  '<td style="color: var(--text-sub);">' + u.perfil + '</td>' +
+                  '<td>' + u.cargo + '</td>' +
+                  '<td>' + statusBadge + '</td>' +
+                  '<td style="text-align: right;">' + btnAcao + '</td>' +
+                '</tr>';
+      });
+      $('usuarios-body').innerHTML = html;
+    }
+
+    function deletarUsuario(login) {
+      confirmP("Excluir Usuário?", 'Tem certeza que deseja revogar permanentemente o acesso do usuário "' + login + '"?', async () => {
+        loader(true);
+        try {
+          const res = await runBackend('excluirUsuarioDB', GLOBAL.usuario.login, login);
+          if(res.ok) {
+            GLOBAL.todosUsuarios = GLOBAL.todosUsuarios.filter(u => u.login !== login);
+            renderTabelaUsuarios();
+            toast("Usuário excluído com sucesso!");
+          } else {
+            toast(res.erro, true);
+          }
+        } catch(e) {
+          toast("Erro: " + e.message, true);
+        }
+        loader(false);
+      });
+    }
+
+    let passoAtual = 0;
+    let xpPoints = 0;
+    let tentativasNaQuestao = 0;
+    let errosEncontradosAuditoria = 0;
+    let totalErrosAuditoria = 0;
+
+
+let cursoP = [];
+
+    function processarCursoDinamico() {
+      if(GLOBAL.treinamento && GLOBAL.treinamento.length > 0) {
+        cursoP = GLOBAL.treinamento.sort((a,b) => parseInt(a.ordem) - parseInt(b.ordem)).map(t => {
+          let base = { id: t.id, tipo: t.tipo, titulo: t.titulo };
+          let extra = {};
+          try { extra = JSON.parse(t.json_data || '{}'); } catch(e){}
+          return { ...base, ...extra };
+        });
+      } else {
+        cursoP = [
+          { tipo: "login", titulo: "ACADEMIA <span>HUB</span>", texto: "Treinamento em construção pela Liderança." }
+        ];
+      }
+    }
+
+
+
+    function renderizarPasso() {
+      const item = cursoP[passoAtual];
+      const porcentagem = (passoAtual / cursoP.length) * 100;
+      
+      $('p-bar').style.width = porcentagem + '%';
+      $('p-text').innerText = 'Progresso: ' + Math.round(porcentagem) + '%';
+      tentativasNaQuestao = 0; 
+
+      let html = '';
+
+      if (item.tipo === "login") {
+        html = '<div class="app-card active" style="position:relative; text-align:center;">' +
+                 '<div class="card-body-train" style="display:flex; flex-direction:column; justify-content:center; align-items:center;">' +
+                   '<div style="font-size: 4.5rem; margin-bottom: 24px;">🎓</div>' +
+                   '<h1 class="title-main">' + item.titulo + '</h1>' +
+                   '<p class="text-content" style="max-width:600px; margin: 0 auto; font-size: 16px;">' + item.texto + '</p>' +
+                   '<h3 style="color:var(--red); font-weight:900; margin-top:30px; font-size: 20px;">Analista: ' + GLOBAL.usuario.nome + '</h3>' +
+                 '</div>' +
+                 '<div class="card-footer-train" style="justify-content:center;">' +
+                   '<button class="btn btn-primary" style="padding: 16px 36px; font-size: 16px;" onclick="avancarTrilha()">INICIAR FORMAÇÃO ➔</button>' +
+                 '</div>' +
+               '</div>';
+      } 
+      else if (item.tipo === "teoria") {
+        let destaqueHtml = item.destaque ? '<div class="text-highlight">' + item.destaque.replace(/\n/g, '<br>') + '</div>' : '';
+let imgHtml = '';
+        if (item.imagens && item.imagens.length > 0) {
+          imgHtml = item.imagens.map(url => '<div class="img-container"><img src="' + url + '" class="slide-image" onerror="this.style.display=\'none\'"></div>').join('');
+        } else if (item.imagem) { 
+          imgHtml = '<div class="img-container"><img src="' + item.imagem + '" class="slide-image" onerror="this.style.display=\'none\'"></div>';
+        }
+        
+        let cardsHtml = item.cards ? item.cards.map(c => {
+          let cardImg = c.imagem ? '<img src="' + c.imagem + '" style="width: 100%; border-radius: 6px; margin-bottom: 12px; object-fit: cover; max-height: 140px;" onerror="this.style.display=\'none\'">' : '';
+          return '<div class="info-box-train">' + cardImg + '<h4>' + c.titulo + '</h4><p>' + c.desc + '</p></div>';
+        }).join('') : '';
+
+
+        html = '<div class="app-card active">' +
+                 '<div class="card-body-train">' +
+                   '<span class="tag-train tag-teoria">Base de Conhecimento</span>' +
+                   '<h2 class="title-main">' + item.titulo + '</h2>' +
+                   '<p class="text-content">' + item.texto + '</p>' +
+                   destaqueHtml + imgHtml +
+                   '<div class="info-grid">' + cardsHtml + '</div>' +
+                 '</div>' +
+                 '<div class="card-footer-train">' +
+                   '<span style="color:var(--text-sub); font-size:12px; font-weight:600;">Leia todo o material antes de confirmar.</span>' +
+                   '<button class="btn btn-primary" onclick="avancarTrilha()">COMPREENDIDO ➔</button>' +
+                 '</div>' +
+               '</div>';
+      } 
+      else if (item.tipo === "pratica") {
+        html = '<div class="app-card active" id="card-pratica">' +
+                 '<div class="card-body-train">' +
+                   '<span class="tag-train tag-pratica">Desafio de Validação</span>' +
+                   '<h2 class="title-main" style="font-size: 22px;">' + item.titulo + '</h2>' +
+                   '<div class="scenario-box">' + item.cenario + '</div>' +
+                   '<div class="options-list">' +
+                     item.opcoes.map(op => '<button class="btn-option" onclick="verificarResposta(\'' + op.id + '\', this)"><div class="letra">' + op.id + '</div><div>' + op.texto + '</div></button>').join('') +
+                   '</div>' +
+                 '</div>' +
+               '</div>';
+      }
+      else if (item.tipo === "auditoria") {
+        html = '<div class="app-card active" id="card-auditoria">' +
+                 '<div class="card-body-train">' +
+                   '<span class="tag-train tag-auditoria">Inspetor de Qualidade</span>' +
+                   '<h2 class="title-main" style="font-size: 22px; color: var(--amber);">' + item.titulo + '</h2>' +
+                   '<p class="text-content">' + item.texto + '</p>' +
+                   '<div class="email-mockup">' +
+                     '<div class="email-header">De: Equipe de Treinamento<br>Para: Clientes</div>' +
+                     '<div class="email-body">' + item.emailHtml + '</div>' +
+                     '<div class="audit-score">Erros Críticos Encontrados: <span id="audit-count">0 / 3</span></div>' +
+                   '</div>' +
+                 '</div>' +
+                 '<div class="card-footer-train">' +
+                   '<span style="color:var(--text-sub); font-size:12px; font-weight:600;" id="audit-hint">Encontre todos os erros no texto acima para avançar.</span>' +
+                   '<button class="btn btn-primary" id="btn-audit-next" onclick="avancarTrilha()" disabled>AVANÇAR ➔</button>' +
+                 '</div>' +
+               '</div>';
+      }
+      else if (item.tipo === "hardcore") {
+        html = '<div class="app-card active" id="card-pratica">' +
+                 '<div class="card-body-train">' +
+                   '<span class="tag-train tag-hardcore">🔥 Desafio Final (Modo Hardcore)</span>' +
+                   '<h2 class="title-main" style="font-size: 22px;">' + item.titulo + '</h2>' +
+                   '<p class="text-content">' + item.texto + '</p>' +
+                   item.cenarioHtml +
+                   '<div class="options-list">' +
+                     item.opcoes.map(op => '<button class="btn-option" onclick="verificarResposta(\'' + op.id + '\', this, true)"><div class="letra">' + op.id + '</div><div>' + op.texto + '</div></button>').join('') +
+                   '</div>' +
+                 '</div>' +
+               '</div>';
+      }
+
+      $('trilha-container').innerHTML = html;
+      if(item.tipo === "auditoria") iniciarAuditoria();
+      const cardBodyTrain = document.querySelector('.card-body-train');
+      if(cardBodyTrain) cardBodyTrain.scrollTop = 0;
+    }
+
+    function iniciarAuditoria() {
+      const errs = document.querySelectorAll('.audit-err');
+      totalErrosAuditoria = errs.length;
+      errosEncontradosAuditoria = 0;
+
+      errs.forEach(err => {
+        err.addEventListener('click', function() {
+          if(!this.classList.contains('found')) {
+            this.classList.add('found');
+            errosEncontradosAuditoria++;
+            $('audit-count').innerText = errosEncontradosAuditoria + ' / ' + totalErrosAuditoria;
+            
+            mostrarFeedback(false, this.getAttribute('data-fb'), true);
+
+            if(errosEncontradosAuditoria === totalErrosAuditoria) {
+              $('btn-audit-next').disabled = false;
+              $('audit-hint').innerHTML = "<span style='color:var(--success);'>Auditoria completa! Você encontrou todos os erros.</span>";
+              xpPoints += 150; 
+              $('xp-counter').innerText = xpPoints + ' XP';
+            }
+          }
+        });
+      });
+    }
+
+    function verificarResposta(respostaUsuario, btnElement, isHardcore = false) {
+      const item = cursoP[passoAtual];
+      const card = $('card-pratica');
+      const acertou = (respostaUsuario === item.correta);
+
+      if (acertou) {
+        document.querySelectorAll('.btn-option').forEach(b => b.style.pointerEvents = 'none'); 
+        btnElement.classList.add('correct');
+        
+        if(tentativasNaQuestao === 0) {
+          xpPoints += isHardcore ? 500 : 100;
+          $('xp-counter').innerText = xpPoints + ' XP';
+        }
+        mostrarFeedback(true, item.feedbackCorreto);
+      } else {
+        tentativasNaQuestao++;
+        btnElement.classList.add('wrong');
+        btnElement.style.pointerEvents = 'none'; 
+        card.classList.add('shake'); 
+        setTimeout(() => card.classList.remove('shake'), 500);
+        mostrarFeedback(false, item.feedbackErro);
+      }
+    }
+
+    function mostrarFeedback(acertou, texto, isAudit = false) {
+      setTimeout(() => {
+        const modal = $('feedbackModal');
+        
+        if(isAudit) {
+          $('fb-icon').innerText = "🔍";
+          $('fb-title').innerText = "Erro Identificado!";
+          $('fb-title').style.color = "var(--warning)";
+        } else {
+          $('fb-icon').innerText = acertou ? "🎯" : "⚠️";
+          $('fb-title').innerText = acertou ? ("Mandou bem, " + GLOBAL.usuario.nome.split(' ')[0] + "!") : "Atenção ao Processo";
+          $('fb-title').style.color = acertou ? "var(--success)" : "var(--red)";
+        }
+        
+        $('fb-text').innerText = texto;
+        
+        const btnModal = $('fb-btn-action');
+        
+        if(isAudit) {
+          btnModal.innerText = "Continuar Inspecionando";
+          btnModal.onclick = () => modal.classList.remove('show');
+        } else if(acertou) {
+          btnModal.innerText = "Continuar Treinamento ➔";
+          btnModal.onclick = () => {
+              modal.classList.remove('show');
+              avancarTrilha();
+          }
+        } else {
+          btnModal.innerText = "Tentar Novamente";
+          btnModal.onclick = () => modal.classList.remove('show');
+        }
+        
+        modal.classList.add('show');
+      }, 400); 
+    }
+
+    function avancarTrilha() {
+      passoAtual++;
+      if (passoAtual < cursoP.length) {
+        renderizarPasso();
+      } else {
+        gerarCertificadoFinal();
+      }
+    }
+
+function gerarCertificadoFinal() {
+      $('p-bar').style.width = '100%';
+      $('p-text').innerText = '100% Concluído';
+
+      const dataHoje = new Date().toLocaleDateString('pt-BR');
+      let rank = "Analista de Elite";
+      if(xpPoints < 500) rank = "Especialista em Treinamento";
+
+      $('trilha-container').innerHTML = 
+        '<div class="app-card active" style="justify-content: center; align-items: center; padding: 20px;">' +
+          '<div class="certificate">' +
+            '<div class="cert-title">CERTIFICADO DE EXCELÊNCIA</div>' +
+            '<div class="cert-sub">Onboarding Concluído</div>' +
+            '<div style="font-size: 16px; color: #475569; margin-bottom: 8px; font-weight: 600;">Certificamos que</div>' +
+            '<div class="cert-name">' + GLOBAL.usuario.nome + '</div>' +
+            '<div style="font-size: 15px; color: #475569; line-height: 1.6; margin-bottom: 30px; font-weight: 500;">' +
+              'Completou com êxito a trilha oficial de capacitação corporativa, absorvendo <br>' +
+              'todo o conhecimento detalhado sobre os Setores, Processos Logísticos, <br>' +
+              'Sistemas, Auditoria de Qualidade e Scripts de Comunicação' +
+            '</div>' +
+            '<div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid #e2e8f0; padding-top: 24px;">' +
+              '<div style="text-align: left;">' +
+                '<div style="font-weight: 900; font-size: 18px; color: #e11919;">Pontuação Final: ' + xpPoints + ' XP</div>' +
+                '<div style="font-size: 14px; color: #64748b; font-weight: 700;">Rank: ' + rank + '</div>' +
+              '</div>' +
+              '<div style="font-size: 32px; font-weight: 900; color: #e11919; opacity: 0.15; transform: rotate(-10deg);">QA APPROVED</div>' +
+              '<div style="text-align: right;">' +
+                '<div style="font-weight: 800; border-bottom: 1px solid #cbd5e1; padding-bottom: 6px;">' + dataHoje + '</div>' +
+                '<div style="font-size: 12px; color: #94a3b8; margin-top: 6px; font-weight: 600;">Data de Emissão</div>' +
+              '</div>' +
+            '</div>' +
+          '</div>' +
+          '<div id="doc-btn-container" style="width:100%;"></div>' +
+          '<button class="btn btn-primary" onclick="nav(\'links\')" style="margin-top: 20px; padding: 16px 32px; font-size: 15px;">Finalizar & Ir para o Painel</button>' +
+        '</div>';
+
+        const topicosAbordados = cursoP
+            .filter(c => c.tipo !== 'login' && c.tipo !== 'auditoria' && c.tipo !== 'hardcore')
+            .map(c => c.titulo.replace(/<[^>]+>/g, '').replace(/^\d+\.\s*/, ''));
+
+        const dadosDoc = {
+            nome: GLOBAL.usuario.nome,
+            login: GLOBAL.usuario.login, 
+            topicos: topicosAbordados
+        };
+
+        toast("Avisando a Liderança...");
+        loader(true);
+
+        runBackend('CriarNovoDocumento', dadosDoc).then(url => {
+            loader(false);
+            
+            if (!GLOBAL.certificados) GLOBAL.certificados = [];
+            GLOBAL.certificados.push({
+                nome: GLOBAL.usuario.nome,
+                login: GLOBAL.usuario.login,
+                data: new Date().toLocaleDateString('pt-BR'),
+                url: url
+            });
+            
+            $('doc-btn-container').innerHTML = '<div style="padding: 15px; background: rgba(16, 185, 129, 0.1); border: 1px solid var(--success); color: var(--success); border-radius: 8px; font-weight: 800; margin-top: 15px; text-align: center;">✅ O registro de conclusão foi enviado diretamente para a liderança.</div>';
+            
+            toast("Finalizado com sucesso!");
+        }).catch(e => {
+            loader(false);
+            toast("Erro ao registrar conclusão: " + e.message, true);
+        });
+    }
+
+    function abrirModalCertificados() {
+      let html = '';
+      if(!GLOBAL.certificados || GLOBAL.certificados.length === 0) {
+          html = '<tr><td colspan="3" style="text-align:center; padding: 25px; color: var(--text-sub);">Nenhum certificado emitido ainda.</td></tr>';
+      } else {
+          GLOBAL.certificados.forEach(c => {
+              let linkDownload = c.url.replace(/\/edit.*$/, '/export?format=docx');
+              
+              html += '<tr>' +
+                        '<td style="font-weight: 800;">' + c.nome + '<br><span style="font-size:10px; color:var(--text-sub);">' + c.login + '</span></td>' +
+                        '<td>' + c.data + '</td>' +
+                        '<td style="text-align: right;"><button class="btn btn-primary" style="padding: 6px 12px; font-size: 11px;" onclick="window.open(\'' + linkDownload + '\', \'_blank\')">⬇️ Baixar DOCX</button></td>' +
+                      '</tr>';
+          });
+      }
+      $('certificados-body').innerHTML = html;
+      $('modal-certificados').classList.add('show');
+    }
+
+
+
+    // ==========================================
+    // GESTÃO ACADEMY
+    // ==========================================
+    function renderTabelaAcademy() {
+      let html = '';
+      let ordenado = [...GLOBAL.treinamento].sort((a,b) => parseInt(a.ordem) - parseInt(b.ordem));
+      
+      ordenado.forEach(t => {
+        let icone = t.tipo === "teoria" ? "📚" : (t.tipo === "pratica" ? "🎯" : "🚀");
+        html += '<tr>' +
+                  '<td style="font-weight:900; color:var(--red);">' + t.ordem + '</td>' +
+                  '<td>' + icone + ' ' + t.tipo.toUpperCase() + '</td>' +
+                  '<td style="font-weight:700;">' + t.titulo + '</td>' +
+                  '<td style="text-align:right;">' +
+                    '<button class="btn btn-outline" style="padding: 4px 8px; font-size:10px; margin-right: 5px;" onclick="abrirFormAcademy(\'' + t.id + '\')">✏️</button>' +
+                    '<button class="btn btn-outline" style="padding: 4px 8px; font-size:10px; border-color:var(--danger); color:var(--danger);" onclick="deletarAcademy(\'' + t.id + '\')">🗑️</button>' +
+                  '</td>' +
+                '</tr>';
+      });
+      $('gestao-academy-body').innerHTML = html || '<tr><td colspan="4" style="text-align:center;">Nenhum módulo cadastrado.</td></tr>';
+    }
+
+    function mudarCamposAcademy() {
+      const tipo = $('ma-tipo').value;
+      $('ma-campos-teoria').style.display = (tipo === 'teoria' || tipo === 'login') ? 'block' : 'none';
+      $('ma-campos-pratica').style.display = tipo === 'pratica' ? 'block' : 'none';
+    }
+
+    function abrirFormAcademy(id = null) {
+      let t = id ? GLOBAL.treinamento.find(x => x.id === id) : {id:'', ordem: GLOBAL.treinamento.length + 1, tipo:'teoria', titulo:'', json_data:'{}'};
+      let extra = {};
+      try { extra = JSON.parse(t.json_data || '{}'); } catch(e){}
+
+      $('ma-id').value = t.id;
+      $('ma-ordem').value = t.ordem;
+      $('ma-tipo').value = t.tipo;
+      $('ma-titulo').value = t.titulo;
+      
+$('ma-texto').value = extra.texto || '';
+      $('ma-destaque').value = extra.destaque || '';
+      $('ma-imagens-container').innerHTML = '';
+      if (extra.imagens && Array.isArray(extra.imagens)) {
+        extra.imagens.forEach(url => addImagemMain(url));
+      } else if (extra.imagem) { 
+        addImagemMain(extra.imagem);
+      }
+
+      $('ma-cards-container').innerHTML = '';
+      if (extra.cards && Array.isArray(extra.cards)) {
+        extra.cards.forEach(c => addCardTeoria(c.titulo, c.desc, c.imagem)); 
+      }
+      
+      $('ma-cenario').value = extra.cenario || '';
+      $('ma-opA').value = extra.opcoes ? extra.opcoes[0].texto : '';
+      $('ma-opB').value = extra.opcoes ? extra.opcoes[1].texto : '';
+      $('ma-opC').value = extra.opcoes ? extra.opcoes[2].texto : '';
+      $('ma-opD').value = extra.opcoes ? extra.opcoes[3].texto : '';
+      $('ma-correta').value = extra.correta || 'A';
+      $('ma-fb-correto').value = extra.feedbackCorreto || '';
+      $('ma-fb-erro').value = extra.feedbackErro || '';
+
+      mudarCamposAcademy();
+      $('ma-title').innerText = id ? "Editar Módulo" : "Novo Módulo";
+      $('modal-form-academy').classList.add('show');
+    }
+
+function addCardTeoria(titulo = '', desc = '', imagem = '') {
+      const container = $('ma-cards-container');
+      const cardId = 'card-' + Date.now() + Math.random().toString(36).substr(2, 5);
+      const html = '<div class="teoria-card-item" id="' + cardId + '" style="background: rgba(0,0,0,0.2); padding: 15px; border-radius: 8px; border: 1px dashed var(--border); position: relative;">' +
+                     '<button type="button" class="btn-close" style="position: absolute; top: 10px; right: 10px; font-size: 14px;" onclick="document.getElementById(\'' + cardId + '\').remove()">✖</button>' +
+                     '<div style="display: flex; gap: 10px; margin-bottom: 10px;">' +
+                       '<div class="form-group" style="flex: 1; margin-bottom: 0;">' +
+                         '<label class="form-label">Título do Card</label>' +
+                         '<input type="text" class="form-input card-titulo" value="' + titulo + '" placeholder="Ex: NOTA FISCAL">' +
+                       '</div>' +
+                       '<div class="form-group" style="flex: 1; margin-bottom: 0;">' +
+                         '<label class="form-label">URL da Imagem (Opcional)</label>' +
+                         '<input type="text" class="form-input card-imagem" value="' + imagem + '" placeholder="https://...">' +
+                       '</div>' +
+                     '</div>' +
+                     '<div class="form-group" style="margin-bottom: 0;">' +
+                       '<label class="form-label">Descrição</label>' +
+                       '<textarea class="form-textarea card-desc" style="min-height: 60px;">' + desc + '</textarea>' +
+                     '</div>' +
+                   '</div>';
+      container.insertAdjacentHTML('beforeend', html);
+    }
+
+
+    async function salvarAcademyDB() {
+      const tipo = $('ma-tipo').value;
+      let extra = {};
+      
+if(tipo === 'teoria' || tipo === 'login') {
+        extra.texto = $('ma-texto').value;
+        if($('ma-destaque').value) extra.destaque = $('ma-destaque').value;
+        const imagensElements = document.querySelectorAll('.main-imagem-url');
+        if (imagensElements.length > 0) {
+          extra.imagens = Array.from(imagensElements)
+                               .map(el => el.value.trim())
+                               .filter(url => url !== '');
+        }
+        
+        const cardElements = document.querySelectorAll('.teoria-card-item');
+        if (cardElements.length > 0) {
+          extra.cards = Array.from(cardElements).map(el => {
+            return {
+              titulo: el.querySelector('.card-titulo').value.trim(),
+              imagem: el.querySelector('.card-imagem').value.trim(), 
+              desc: el.querySelector('.card-desc').value.trim()
+            };
+          }).filter(c => c.titulo || c.desc);
+        }
+      } else if (tipo === 'pratica') {
+
+        extra.cenario = $('ma-cenario').value;
+        extra.opcoes = [
+          { id: "A", texto: $('ma-opA').value },
+          { id: "B", texto: $('ma-opB').value },
+          { id: "C", texto: $('ma-opC').value },
+          { id: "D", texto: $('ma-opD').value }
+        ];
+        extra.correta = $('ma-correta').value;
+        extra.feedbackCorreto = $('ma-fb-correto').value;
+        extra.feedbackErro = $('ma-fb-erro').value;
+      }
+
+      let obj = {
+        id: $('ma-id').value,
+        ordem: $('ma-ordem').value,
+        tipo: tipo,
+        titulo: $('ma-titulo').value.trim(),
+        json_data: JSON.stringify(extra)
+      };
+
+      if(!obj.titulo) return toast("O Título é obrigatório!", true);
+
+      loader(true);
+      try {
+        let res = await runBackend('salvarTreinamentoDB', GLOBAL.usuario.login, obj);
+        if(!obj.id) GLOBAL.treinamento.push(res);
+        else {
+          let idx = GLOBAL.treinamento.findIndex(a => a.id === obj.id);
+          GLOBAL.treinamento[idx] = res;
+        }
+        processarCursoDinamico(); // Atualiza o array real
+        renderTabelaAcademy();
+        fecharModal('modal-form-academy');
+        toast("Módulo salvo!");
+      } catch(e) { toast("Erro: " + e.message, true); }
+      loader(false);
+    }
+
+    function deletarAcademy(id) {
+      confirmP("Excluir Módulo?", "Remover etapa do treinamento?", async () => {
+        loader(true);
+        try {
+          await runBackend('excluirTreinamentoDB', GLOBAL.usuario.login, id);
+          GLOBAL.treinamento = GLOBAL.treinamento.filter(a => a.id !== id);
+          processarCursoDinamico();
+          renderTabelaAcademy();
+          toast("Módulo excluído.");
+        } catch(e) { toast("Erro: " + e.message, true); }
+        loader(false);
+      });
+    }
+
+    function addImagemMain(url = '') {
+      const container = $('ma-imagens-container');
+      const imgId = 'img-main-' + Date.now() + Math.random().toString(36).substr(2, 5);
+      const html = '<div id="' + imgId + '" style="display: flex; gap: 10px; align-items: center;">' +
+                     '<input type="text" class="form-input main-imagem-url" value="' + url + '" placeholder="URL da imagem (https://...)" style="flex: 1;">' +
+                     '<button type="button" class="btn-close" style="color: var(--danger); font-size: 18px;" onclick="document.getElementById(\'' + imgId + '\').remove()">✖</button>' +
+                   '</div>';
+      container.insertAdjacentHTML('beforeend', html);
+    }
+
+
+    document.addEventListener('paste', function(e) {
+      const isAcademyOpen = $('modal-form-academy').classList.contains('show');
+      const isManualOpen = $('modal-form').classList.contains('show') && $('mf-title').innerText.includes('Manual');
+      
+      if (!isAcademyOpen && !isManualOpen) return;
+
+      const items = (e.clipboardData || e.originalEvent.clipboardData).items;
+      let blob = null;
+
+      for (let i = 0; i < items.length; i++) {
+        if (items[i].type.indexOf("image") === 0) {
+          blob = items[i].getAsFile();
+          break;
+        }
+      }
+
+      if (blob !== null) {
+        e.preventDefault(); 
+
+        const campoAtivo = document.activeElement;
+        
+        toast("Fazendo upload da imagem pro Drive...", false);
+        loader(true);
+
+        const reader = new FileReader();
+        reader.onload = function(event) {
+          const base64Data = event.target.result;
+          const filename = "Upload_Painel_" + new Date().getTime() + ".png";
+
+          runBackend('uploadImagemDrive', GLOBAL.usuario.login, base64Data, filename).then(url => {
+            loader(false);
+            
+            if (campoAtivo && campoAtivo.tagName === 'INPUT') {
+              campoAtivo.value = url;
+            } else {
+              if (isAcademyOpen) addImagemMain(url);
+              if (isManualOpen) addImagemInstrucao(url);
+            }
+
+            toast("Imagem colada com sucesso!");
+          }).catch(err => {
+            loader(false);
+            toast("Erro no upload: " + err.message, true);
+          });
+        };
+        
+        reader.readAsDataURL(blob);
+      }
+    });
+  </script>
+</body>
+</html>
